@@ -6,6 +6,11 @@
 # 95533 André Martins Esgalhado
 # 95574 Filipe Ligeiro Silva
 
+# FIXME isto pode falhar no mooshak, depois teremos que testar, devido às type
+# annotations. Caso falhe, podemos apenas voltar a colocar como estava, o
+# código corre na mesma
+from __future__ import annotations
+
 import sys
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 
@@ -20,34 +25,34 @@ class NumbrixState:
 
     def __lt__(self, other):
         return self.id < other.id
-        
+
     # TODO: outros metodos da classe
 
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
-    def __init__(self, N, board):
+    def __init__(self, N: int, board: list):
         self.N = N
         self.board = board
-    
-    def get_number(self, row: int, col: int) -> int:
+
+    def get_number(self, row: int, col: int) -> int | None:
         """ Devolve o valor na respetiva posição do tabuleiro. """
-        # TODO
-        pass
-    
-    def adjacent_vertical_numbers(self, row: int, col: int) -> (int, int):
-        """ Devolve os valores imediatamente abaixo e acima, 
+        if 0 <= row < self.N and 0 <= col < self.N:
+            return self.board[row][col]
+
+        return None
+
+    def adjacent_vertical_numbers(self, row: int, col: int) -> tuple[int | None, int | None]:
+        """ Devolve os valores imediatamente abaixo e acima,
         respectivamente. """
-        # TODO
-        pass
-    
-    def adjacent_horizontal_numbers(self, row: int, col: int) -> (int, int):
-        """ Devolve os valores imediatamente à esquerda e à direita, 
+        return self.get_number(row + 1, col), self.get_number(row - 1, col)
+
+    def adjacent_horizontal_numbers(self, row: int, col: int) -> tuple[int | None, int | None]:
+        """ Devolve os valores imediatamente à esquerda e à direita,
         respectivamente. """
-        # TODO
-        pass
-    
-    @staticmethod    
+        return self.get_number(row, col - 1), self.get_number(row, col + 1)
+
+    @staticmethod
     def parse_instance(filename: str):
         """ Lê o ficheiro cujo caminho é passado como argumento e retorna
         uma instância da classe Board. """
@@ -90,14 +95,14 @@ class Numbrix(Problem):
     def result(self, state: NumbrixState, action):
         """ Retorna o estado resultante de executar a 'action' sobre
         'state' passado como argumento. A ação a executar deve ser uma
-        das presentes na lista obtida pela execução de 
+        das presentes na lista obtida pela execução de
         self.actions(state). """
         # TODO
         pass
 
     def goal_test(self, state: NumbrixState):
         """ Retorna True se e só se o estado passado como argumento é
-        um estado objetivo. Deve verificar se todas as posições do tabuleiro 
+        um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes. """
         # TODO
         pass
@@ -106,7 +111,7 @@ class Numbrix(Problem):
         """ Função heuristica utilizada para a procura A*. """
         # TODO
         pass
-    
+
     # TODO: outros metodos da classe
 
 
@@ -121,5 +126,15 @@ if __name__ == "__main__":
         print("Usage: python3 numbrix.py <instance_file>")
         sys.exit(1)
 
+    # i1.txt do enunciado
+    # board = Board.parse_instance(sys.argv[1])
+    # board.board = [[0,0,0],[0,0,2],[0,6,0]]
+
     board = Board.parse_instance(sys.argv[1])
+
     print("Initial:\n", board.to_string(), sep="")
+
+    print(board.adjacent_vertical_numbers(2, 2))
+    print(board.adjacent_horizontal_numbers(2, 2))
+    print(board.adjacent_vertical_numbers(1, 1))
+    print(board.adjacent_horizontal_numbers(1, 1))
