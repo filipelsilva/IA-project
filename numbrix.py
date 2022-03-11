@@ -26,6 +26,9 @@ class NumbrixState:
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
+    def __init__(self, N, board):
+        self.N = N
+        self.board = board
     
     def get_number(self, row: int, col: int) -> int:
         """ Devolve o valor na respetiva posição do tabuleiro. """
@@ -48,8 +51,26 @@ class Board:
     def parse_instance(filename: str):
         """ Lê o ficheiro cujo caminho é passado como argumento e retorna
         uma instância da classe Board. """
-        # TODO
-        pass
+
+        with open(filename, 'r') as file:
+            N = int(file.readline()[:-1])
+            board = list(map(lambda x: list(map(int, x[:-1].split('\t'))), file.readlines()))
+
+        return Board(N, board)
+
+    def __repr__(self):
+        ret = ""
+
+        for line in self.board:
+            ret += '\t'.join(map(str, line))
+            ret += '\n'
+
+        return ret
+
+    def to_string(self):
+        """ Returns string representation of the board. Same as __repr__, for
+        compatibility with the project examples """
+        return self.__repr__()
 
     # TODO: outros metodos da classe
 
@@ -95,4 +116,9 @@ if __name__ == "__main__":
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
-    pass
+
+    if len(sys.argv) != 2:
+        print("Usage: python3 numbrix.py <instance_file>")
+        sys.exit(1)
+
+    instance = Board.parse_instance(sys.argv[1])
