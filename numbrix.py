@@ -67,9 +67,9 @@ class Board:
 
         return ret
 
-    def to_string(self):
-        """ Returns string representation of the board. Same as __repr__, for
-        compatibility with the project examples """
+    def to_string(self) -> str:
+        """ Retorna representação em string da Board. É igual a __repr__, para
+        compatibilidade com os exemplos do enunciado. """
         return self.__repr__()
 
     # TODO: outros metodos da classe
@@ -121,4 +121,5 @@ if __name__ == "__main__":
         print("Usage: python3 numbrix.py <instance_file>")
         sys.exit(1)
 
-    instance = Board.parse_instance(sys.argv[1])
+    board = Board.parse_instance(sys.argv[1])
+    print("Initial:\n", board.to_string(), sep="")
