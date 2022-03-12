@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  ia-project:
+    build: .
+    volumes:
+      - .:/test
+    stdin_open: true
+    tty: true
+    entrypoint: bash
+
+# docker-compose run ia-project
