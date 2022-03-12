@@ -9,4 +9,4 @@ services:
     tty: true
     entrypoint: bash
 
-# docker-compose run ia-project
+# docker-compose run test
