@@ -83,8 +83,7 @@ class Board:
 class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
-        # TODO
-        pass
+        self.board = board
 
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
@@ -104,8 +103,33 @@ class Numbrix(Problem):
         """ Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes. """
-        # TODO
-        pass
+        row = -1
+        col = -1
+
+        for rows, cols in zip(range(state.board.N), range(state.board.N)):
+            if state.board.get_number(rows, cols) == 1:
+                row = rows
+                col = cols
+
+        if (row == -1 or col == -1):
+            return False
+
+        i = 2
+        while i < 10:
+            horizontal = state.board.adjacent_horizontal_numbers(row, col)
+            vertical = state.board.adjacent_vertical_numbers(row, col)
+            if horizontal[0] == i:
+                col -= 1
+            elif horizontal[1] == i:
+                col += 1
+            elif vertical[0] == i:
+                row += 1
+            elif vertical[1] == i:
+                row -= 1
+            else:
+                return False
+
+        return True
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
@@ -122,15 +146,14 @@ if __name__ == "__main__":
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
 
-    if len(sys.argv) != 2:
-        print("Usage: python3 numbrix.py <instance_file>")
-        sys.exit(1)
+    # if len(sys.argv) != 2:
+    #     print("Usage: python3 numbrix.py <instance_file>")
+    #     sys.exit(1)
 
     # i1.txt do enunciado
-    # board = Board.parse_instance(sys.argv[1])
-    # board.board = [[0,0,0],[0,0,2],[0,6,0]]
+    board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
 
-    board = Board.parse_instance(sys.argv[1])
+    # board = Board.parse_instance(sys.argv[1])
 
     print("Initial:\n", board.to_string(), sep="")
 
