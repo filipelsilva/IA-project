@@ -91,7 +91,7 @@ class Numbrix(Problem):
         # TODO
         pass
 
-    def result(self, state: NumbrixState, action):
+    def result(self, state: NumbrixState, action) -> NumbrixState:
         """ Retorna o estado resultante de executar a 'action' sobre
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
@@ -103,19 +103,22 @@ class Numbrix(Problem):
         """ Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes. """
+        i = 1
         row = -1
         col = -1
 
+        # Procura pela posição inicial, retorna False se não encontrar
         for rows, cols in zip(range(state.board.N), range(state.board.N)):
-            if state.board.get_number(rows, cols) == 1:
+            if state.board.get_number(rows, cols) == i:
                 row = rows
                 col = cols
 
         if (row == -1 or col == -1):
             return False
 
-        i = 2
-        while i < 10:
+        # Procura pelas restantes posições
+        while i < 9:
+            i += 1
             horizontal = state.board.adjacent_horizontal_numbers(row, col)
             vertical = state.board.adjacent_vertical_numbers(row, col)
             if horizontal[0] == i:
@@ -150,14 +153,15 @@ if __name__ == "__main__":
     #     print("Usage: python3 numbrix.py <instance_file>")
     #     sys.exit(1)
 
-    # i1.txt do enunciado
-    board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
-
     # board = Board.parse_instance(sys.argv[1])
 
-    print("Initial:\n", board.to_string(), sep="")
+    # i1.txt do enunciado
+    # board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
 
-    print(board.adjacent_vertical_numbers(2, 2))
-    print(board.adjacent_horizontal_numbers(2, 2))
-    print(board.adjacent_vertical_numbers(1, 1))
-    print(board.adjacent_horizontal_numbers(1, 1))
+    board = Board(3, [[9,4,3],[8,5,2],[7,6,1]])
+    # Criar uma instância de Numbrix:
+    problem = Numbrix(board)
+    # Criar um estado com a configuração inicial:
+    s = NumbrixState(board)
+    print("Is goal?", problem.goal_test(s))
+    print("Solution:\n", s.board.to_string(), sep="")
