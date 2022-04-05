@@ -113,7 +113,7 @@ class Numbrix(Problem):
                 row = rows
                 col = cols
 
-        if (row == -1 or col == -1):
+        if row == -1 or col == -1:
             return False
 
         # Procura pelas restantes posições
