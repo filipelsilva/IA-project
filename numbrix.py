@@ -127,8 +127,8 @@ class Numbrix(Problem):
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento. """
-        maximum_number = state.board.find_maximum()
-        minimum_number = state.board.find_mininum()
+        max_row, max_col, maximum = state.board.find_maximum()
+        min_row, min_col, minimum = state.board.find_mininum()
 
         # TODO
         pass
