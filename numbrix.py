@@ -42,6 +42,45 @@ class Board:
 
         return None
 
+    def find_number(self, value: int) -> tuple[int, int] | tuple[None, None]:
+        """ Deveolve a localização do valor no tabuleiro. """
+        for rows in range(self.N):
+            for cols in range(self.N):
+                if self.board[rows][cols] == value:
+                    return (rows, cols)
+
+        return None, None
+
+    def find_mininum(self) -> tuple[int | None, int | None, int]:
+        minimum = self.N ** 2 + 1
+        row = None
+        col = None
+
+        for rows in range(self.N):
+            for cols in range(self.N):
+                value = self.board[rows][cols]
+                if value < minimum:
+                    row = rows
+                    col = cols
+                    minimum = value
+
+        return (row, col, minimum)
+
+    def find_maximum(self) -> tuple[int | None, int | None, int]:
+        maximum = 0
+        row = None
+        col = None
+
+        for rows in range(self.N):
+            for cols in range(self.N):
+                value = self.board[rows][cols]
+                if value > maximum:
+                    row = rows
+                    col = cols
+                    maximum = value
+
+        return (row, col, maximum)
+
     def adjacent_vertical_numbers(self, row: int, col: int) -> tuple[int | None, int | None]:
         """ Devolve os valores imediatamente abaixo e acima,
         respectivamente. """
@@ -88,6 +127,9 @@ class Numbrix(Problem):
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento. """
+        maximum_number = state.board.find_maximum()
+        minimum_number = state.board.find_mininum()
+
         # TODO
         pass
 
@@ -108,22 +150,14 @@ class Numbrix(Problem):
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes. """
 
-        # TODO pesquisar pelo index menor também pode dar, algo para ver
         i = 1
-        row = -1
-        col = -1
+        row, col = state.board.find_number(i)
 
-        # Procura pela posição inicial, retorna False se não encontrar
-        for rows, cols in zip(range(state.board.N), range(state.board.N)):
-            if state.board.get_number(rows, cols) == i:
-                row = rows
-                col = cols
-
-        if row == -1 or col == -1:
+        if row == None or col == None:
             return False
 
         # Procura pelas restantes posições
-        while i < 9:
+        while i < state.board.N ** 2:
             i += 1
             horizontal = state.board.adjacent_horizontal_numbers(row, col)
             vertical = state.board.adjacent_vertical_numbers(row, col)
