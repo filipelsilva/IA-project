@@ -96,13 +96,19 @@ class Numbrix(Problem):
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
         self.actions(state). """
-        # TODO
-        pass
+
+        # FIXME adicionar verificação de action, ainda não sei bem o que pôr
+        copy_board = [line[:] for line in state.board.board]
+        row, col, value = action
+        copy_board[row][col] = value
+        return NumbrixState(copy_board)
 
     def goal_test(self, state: NumbrixState):
         """ Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes. """
+
+        # TODO pesquisar pelo index menor também pode dar, algo para ver
         i = 1
         row = -1
         col = -1
