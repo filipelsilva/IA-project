@@ -153,7 +153,7 @@ class Numbrix(Problem):
         i = 1
         row, col = state.board.find_number(i)
 
-        if row == None or col == None:
+        if row is None or col is None:
             return False
 
         # Procura pelas restantes posições
