@@ -51,7 +51,19 @@ class Board:
 
         return None, None
 
+    def possible_values(self) -> list:
+        """ Devolve a lista de valores que não foram ainda colocados 
+        no tabuleiro """
+        # TODO more readeble?
+        vals = [v for v in range(1, self.N**2+1)]
+        placed_vals = [v for row in self.board for v in row]
+        for v in placed_vals:
+            if v in vals:
+                vals.remove(v)
+        return vals
+
     def find_mininum(self) -> tuple[int | None, int | None, int]:
+        # TODO descricao e ver onde se usa
         minimum = self.N ** 2 + 1
         row = None
         col = None
@@ -67,6 +79,7 @@ class Board:
         return (row, col, minimum)
 
     def find_maximum(self) -> tuple[int | None, int | None, int]:
+        # TODO descricao e ver onde se usa
         maximum = 0
         row = None
         col = None
@@ -122,16 +135,42 @@ class Board:
 class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
-        self.board = board
+        self.initial = NumbrixState(board)
 
-    def actions(self, state: NumbrixState):
+    def is_valid_action(self, state: NumbrixState, action: tuple[int, int, int]) -> bool:
+        """ Retorna um booleano referente à possibilidade de executar a 'action' 
+        passada como argumento sobre o 'state' passado como argumento. 
+        Verifica se a posicao da 'action' pertence ao 'board' e se o valor 
+        aplicado é plausível. """
+        if (action[0] < 0 or action[0] >= state.board.N 
+            or action[1] < 0 or action[1] >= state.board.N):
+            return False
+
+        vertical_adjacents = state.board.adjacent_vertical_numbers(action[0], action[1])
+        horizontal_adjacents = state.board.adjacent_horizontal_numbers(action[0], action[1])
+
+        if( action[2] in vertical_adjacents or action[2] in horizontal_adjacents 
+            or action[2] > state.board.N**2 or action[2] < 1 
+            or state.board.find_number(action[2]) != (None, None)):
+            return False
+
+        return True
+    
+    def actions(self, state: NumbrixState) -> list[tuple[int, int, int]]:
         """ Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento. """
         max_row, max_col, maximum = state.board.find_maximum()
         min_row, min_col, minimum = state.board.find_mininum()
-
-        # TODO
-        pass
+        possible_vals = state.board.possible_values()
+        ret = []
+        for row in range(state.board.N):
+            for col in range(state.board.N):
+                value = state.board.get_number(row, col)
+                if(value == 0):
+                    for val in possible_vals:
+                        if (self.is_valid_action(state, (row, col, val))):
+                            ret += [(row, col, val)]
+        return ret
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
         """ Retorna o estado resultante de executar a 'action' sobre
@@ -139,17 +178,15 @@ class Numbrix(Problem):
         das presentes na lista obtida pela execução de
         self.actions(state). """
 
-        # FIXME adicionar verificação de action, ainda não sei bem o que pôr
         copy_board = [line[:] for line in state.board.board]
         row, col, value = action
         copy_board[row][col] = value
-        return NumbrixState(copy_board)
+        return NumbrixState(Board(state.board.N, copy_board))
 
     def goal_test(self, state: NumbrixState):
         """ Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro
         estão preenchidas com uma sequência de números adjacentes. """
-
         i = 1
         row, col = state.board.find_number(i)
 
@@ -177,7 +214,7 @@ class Numbrix(Problem):
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
         # TODO
-        pass
+        return 0
 
     # TODO: outros metodos da classe
 
@@ -205,3 +242,7 @@ if __name__ == "__main__":
     s = NumbrixState(board)
     print("Is goal?", problem.goal_test(s))
     print("Solution:\n", s.board.to_string(), sep="")
+
+    goal_node = astar_search(problem)
+    print("Is goal?", problem.goal_test(goal_node.state))
+    print("Solution:\n", goal_node.state.board.to_string(), sep="")
