@@ -52,7 +52,7 @@ class Board:
         return None, None
 
     def possible_values(self) -> list:
-        """ Devolve a lista de valores que não foram ainda colocados 
+        """ Devolve a lista de valores que não foram ainda colocados
         no tabuleiro """
         # TODO more readeble?
         vals = [v for v in range(1, self.N**2+1)]
@@ -138,35 +138,38 @@ class Numbrix(Problem):
         self.initial = NumbrixState(board)
 
     def is_valid_action(self, state: NumbrixState, action: tuple[int, int, int]) -> bool:
-        """ Retorna um booleano referente à possibilidade de executar a 'action' 
-        passada como argumento sobre o 'state' passado como argumento. 
-        Verifica se a posicao da 'action' pertence ao 'board' e se o valor 
+        """ Retorna um booleano referente à possibilidade de executar a 'action'
+        passada como argumento sobre o 'state' passado como argumento.
+        Verifica se a posicao da 'action' pertence ao 'board' e se o valor
         aplicado é plausível. """
-        if (action[0] < 0 or action[0] >= state.board.N 
-            or action[1] < 0 or action[1] >= state.board.N):
+        if (action[0] < 0 or action[0] >= state.board.N
+                or action[1] < 0 or action[1] >= state.board.N):
             return False
 
         vertical_adjacents = state.board.adjacent_vertical_numbers(action[0], action[1])
         horizontal_adjacents = state.board.adjacent_horizontal_numbers(action[0], action[1])
 
-        if( action[2] in vertical_adjacents or action[2] in horizontal_adjacents 
-            or action[2] > state.board.N**2 or action[2] < 1 
-            or state.board.find_number(action[2]) != (None, None)):
+        if (action[2] in vertical_adjacents
+                or action[2] in horizontal_adjacents
+                or action[2] > state.board.N**2
+                or action[2] < 1
+                or state.board.find_number(action[2]) != (None, None)):
             return False
 
         return True
-    
+
     def actions(self, state: NumbrixState) -> list[tuple[int, int, int]]:
         """ Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento. """
-        max_row, max_col, maximum = state.board.find_maximum()
-        min_row, min_col, minimum = state.board.find_mininum()
+        # FIXME se não for usado apagar funções
+        # max_row, max_col, maximum = state.board.find_maximum()
+        # min_row, min_col, minimum = state.board.find_mininum()
         possible_vals = state.board.possible_values()
         ret = []
         for row in range(state.board.N):
             for col in range(state.board.N):
                 value = state.board.get_number(row, col)
-                if(value == 0):
+                if (value == 0):
                     for val in possible_vals:
                         if (self.is_valid_action(state, (row, col, val))):
                             ret += [(row, col, val)]
@@ -233,16 +236,9 @@ if __name__ == "__main__":
     # board = Board.parse_instance(sys.argv[1])
 
     # i1.txt do enunciado
-    # board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
+    board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
 
-    board = Board(3, [[9,4,3],[8,5,2],[7,6,1]])
-    # Criar uma instância de Numbrix:
     problem = Numbrix(board)
-    # Criar um estado com a configuração inicial:
-    s = NumbrixState(board)
-    print("Is goal?", problem.goal_test(s))
-    print("Solution:\n", s.board.to_string(), sep="")
-
-    goal_node = astar_search(problem)
+    goal_node = breadth_first_graph_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution:\n", goal_node.state.board.to_string(), sep="")
