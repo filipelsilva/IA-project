@@ -164,14 +164,18 @@ class Numbrix(Problem):
         # FIXME se não for usado apagar funções
         # max_row, max_col, maximum = state.board.find_maximum()
         # min_row, min_col, minimum = state.board.find_mininum()
-        possible_vals = state.board.possible_values()
+        possible_vals = set(state.board.possible_values())
         ret = []
         for row in range(state.board.N):
             for col in range(state.board.N):
                 value = state.board.get_number(row, col)
                 if (value == 0):
-                    for val in possible_vals:
-                        if (self.is_valid_action(state, (row, col, val))):
+                    adjacents = state.board.adjacent_vertical_numbers(row, col)
+                    adjacents += state.board.adjacent_horizontal_numbers(row, col)
+                    test = [i + 1 for i in adjacents if i != None]
+                    test += [i - 1 for i in adjacents if i != None]
+                    for val in test:
+                        if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
                             ret += [(row, col, val)]
         return ret
 
@@ -237,8 +241,9 @@ if __name__ == "__main__":
 
     # i1.txt do enunciado
     board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
+    # board = Board(3, [[9,4,3],[8,5,2],[7,6,1]])
 
     problem = Numbrix(board)
-    goal_node = astar_search(problem)
+    goal_node = depth_first_tree_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution:\n", goal_node.state.board.to_string(), sep="")
