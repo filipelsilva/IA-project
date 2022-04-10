@@ -239,6 +239,6 @@ if __name__ == "__main__":
     board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
 
     problem = Numbrix(board)
-    goal_node = breadth_first_graph_search(problem)
+    goal_node = breadth_first_tree_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution:\n", goal_node.state.board.to_string(), sep="")
