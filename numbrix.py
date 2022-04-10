@@ -51,16 +51,12 @@ class Board:
 
         return None, None
 
-    def possible_values(self) -> list:
+    def possible_values(self) -> set:
         """ Devolve a lista de valores que não foram ainda colocados
         no tabuleiro """
-        # TODO more readeble?
-        vals = [v for v in range(1, self.N**2+1)]
-        placed_vals = [v for row in self.board for v in row]
-        for v in placed_vals:
-            if v in vals:
-                vals.remove(v)
-        return vals
+        all_values = set(range(1, self.N**2 + 1))
+        placed_values = set(v for row in self.board for v in row)
+        return all_values.difference(placed_values)
 
     def find_mininum(self) -> tuple[int | None, int | None, int]:
         # TODO descricao e ver onde se usa
@@ -164,7 +160,7 @@ class Numbrix(Problem):
         # FIXME se não for usado apagar funções
         # max_row, max_col, maximum = state.board.find_maximum()
         # min_row, min_col, minimum = state.board.find_mininum()
-        possible_vals = set(state.board.possible_values())
+        possible_vals = state.board.possible_values()
         ret = []
         for row in range(state.board.N):
             for col in range(state.board.N):
