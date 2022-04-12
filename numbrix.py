@@ -158,6 +158,35 @@ class Numbrix(Problem):
 
         return True
 
+    def recursive_chain_counter(self, state: NumbrixState, explored, row, col, val):
+        ret = 0
+        adjacents = state.board.adjacent_vertical_numbers(row, col) 
+        adjacents += state.board.adjacent_horizontal_numbers(row, col)
+        if val+1 in adjacents and val+1 not in explored:
+            new_row, new_col = state.board.find_number(val+1)
+            explored += [val+1]
+            ret = 1 + self.recursive_chain_counter(state, explored, new_row, new_col, val+1)
+        if val-1 in adjacents and val-1 not in explored:
+            new_row, new_col = state.board.find_number(val-1)
+            explored += [val-1]
+            ret = 1 + self.recursive_chain_counter(state, explored, new_row, new_col, val-1)
+        return ret
+
+    def longest_chain_size(self, state: NumbrixState) -> int:
+        max = 0
+        explored = []
+        for row in range(state.board.N):
+            for col in range(state.board.N):
+                val = state.board.get_number(row, col)
+                if (val != 0):
+                    explored += [val]
+                    ret = self.recursive_chain_counter(state, explored, row, col, val)
+                    if ret > max:
+                        max = ret
+                if max > state.board.N**2:
+                    return max
+        return max
+
     def actions(self, state: NumbrixState) -> list[tuple[int, int, int]]:
         """ Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento. """
@@ -220,8 +249,20 @@ class Numbrix(Problem):
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
-        # TODO
-        return 0
+
+        action = node.action
+        state = node.state
+        if(action is not None):
+            action_adjacents = state.board.adjacent_horizontal_numbers(action[0], action[1])
+            action_adjacents += state.board.adjacent_vertical_numbers(action[0], action[1])
+            #best option
+            if(action[2]+1 in action_adjacents and action[2]-1 in action_adjacents):
+                return 0
+            if(action[2]+1 in action_adjacents or action[2]-1 in action_adjacents and action_adjacents.count(0) == 0):
+                return 0
+        #TODO reduce complexity
+        ret = self.initial.board.N**2 - self.longest_chain_size(state)
+        return ret
 
     # TODO: outros metodos da classe
 
@@ -237,13 +278,13 @@ if __name__ == "__main__":
     #     print("Usage: python3 numbrix.py <instance_file>")
     #     sys.exit(1)
 
-    board = Board.parse_instance(sys.argv[1])
+    # board = Board.parse_instance(sys.argv[1])
 
     # i1.txt do enunciado
-    # board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
+    board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
     # board = Board(3, [[9,4,3],[8,5,2],[7,6,1]])
 
     problem = Numbrix(board)
-    goal_node = depth_first_tree_search(problem)
+    goal_node = astar_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution:\n", goal_node.state.board.to_string(), sep="")
