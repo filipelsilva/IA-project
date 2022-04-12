@@ -10,11 +10,11 @@
 # annotations. Caso falhe, podemos apenas voltar a colocar como estava, o
 # código corre na mesma
 from __future__ import annotations
-from os import system
 
 import sys
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 from utils import unique
+from itertools import chain, combinations #TODO podemos importar isto? (é usado no utils)
 
 class NumbrixState:
     state_id = 0
@@ -25,7 +25,41 @@ class NumbrixState:
         NumbrixState.state_id += 1
 
     def __lt__(self, other):
+        s_size = self.longest_chain_size()
+        o_size = other.longest_chain_size()
+        if s_size != o_size:
+            return s_size > o_size
         return self.id < other.id
+
+    def recursive_chain_counter(self, explored, row, col, val):
+        ret = 0
+        adjacents = self.board.adjacent_vertical_numbers(row, col) 
+        adjacents += self.board.adjacent_horizontal_numbers(row, col)
+        if val+1 in adjacents and val+1 not in explored:
+            new_row, new_col = self.board.find_number(val+1)
+            explored += [val+1]
+            ret = 1 + self.recursive_chain_counter(explored, new_row, new_col, val+1)
+        if val-1 in adjacents and val-1 not in explored:
+            new_row, new_col = self.board.find_number(val-1)
+            explored += [val-1]
+            ret = 1 + self.recursive_chain_counter(explored, new_row, new_col, val-1)
+        return ret
+
+    def longest_chain_size(self) -> int:
+        max = 0
+        explored = []
+        for row in range(self.board.N):
+            for col in range(self.board.N):
+                val = self.board.get_number(row, col)
+                if (val != 0):
+                    explored += [val]
+                    ret = self.recursive_chain_counter(explored, row, col, val)
+                    if ret > max:
+                        max = ret
+                if max > self.board.N**2:
+                    return max
+        return max
+
 
     # TODO: outros metodos da classe
 
@@ -158,35 +192,6 @@ class Numbrix(Problem):
 
         return True
 
-    def recursive_chain_counter(self, state: NumbrixState, explored, row, col, val):
-        ret = 0
-        adjacents = state.board.adjacent_vertical_numbers(row, col) 
-        adjacents += state.board.adjacent_horizontal_numbers(row, col)
-        if val+1 in adjacents and val+1 not in explored:
-            new_row, new_col = state.board.find_number(val+1)
-            explored += [val+1]
-            ret = 1 + self.recursive_chain_counter(state, explored, new_row, new_col, val+1)
-        if val-1 in adjacents and val-1 not in explored:
-            new_row, new_col = state.board.find_number(val-1)
-            explored += [val-1]
-            ret = 1 + self.recursive_chain_counter(state, explored, new_row, new_col, val-1)
-        return ret
-
-    def longest_chain_size(self, state: NumbrixState) -> int:
-        max = 0
-        explored = []
-        for row in range(state.board.N):
-            for col in range(state.board.N):
-                val = state.board.get_number(row, col)
-                if (val != 0):
-                    explored += [val]
-                    ret = self.recursive_chain_counter(state, explored, row, col, val)
-                    if ret > max:
-                        max = ret
-                if max > state.board.N**2:
-                    return max
-        return max
-
     def actions(self, state: NumbrixState) -> list[tuple[int, int, int]]:
         """ Retorna uma lista de ações que podem ser executadas a
         partir do estado passado como argumento. """
@@ -201,15 +206,34 @@ class Numbrix(Problem):
                 if (value == 0):
                     adjacents = state.board.adjacent_vertical_numbers(row, col)
                     adjacents += state.board.adjacent_horizontal_numbers(row, col)
+                    
+                    if (adjacents.count(0) == 0):
+                        pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2,3)))[1:]
+                        add_to_ret = []
+                        for pair in pairs:
+                            if(pair[1] is None or pair[0] is None):
+                                continue
+                            if pair[1] - pair[0] == 2:
+                                add_to_ret += [(row, col, pair[1]-1)]
+
+                        if len(add_to_ret) != 0 :
+                            return add_to_ret
+                            
+                        else:
+                            test = [i + 1 for i in adjacents if i != None and i != 0]
+                            test += [i - 1 for i in adjacents if i != None and i != 0]                            
+                            for val in test:
+                                if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
+                                    add_to_ret += [(row, col, val)]
+                            if adjacents.count(0) == 0:
+                                return unique(add_to_ret)
+
                     test = [i + 1 for i in adjacents if i != None and i != 0]
                     test += [i - 1 for i in adjacents if i != None and i != 0]
-                    add_to_ret = []
                     for val in test:
                         if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
-                            add_to_ret += [(row, col, val)]
-                    if adjacents.count(0) == 0:
-                        return unique(add_to_ret)
-                    ret += add_to_ret
+                            ret += [(row, col, val)]
+                    
         return unique(ret)
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
@@ -265,8 +289,7 @@ class Numbrix(Problem):
             if(action[2]+1 in action_adjacents or action[2]-1 in action_adjacents and action_adjacents.count(0) == 0):
                 return 0
         #TODO reduce complexity
-        ret = self.initial.board.N**2 - self.longest_chain_size(state)
-        return ret
+        return self.initial.board.N**2 - state.longest_chain_size()
 
     # TODO: outros metodos da classe
 
@@ -282,13 +305,13 @@ if __name__ == "__main__":
     #     print("Usage: python3 numbrix.py <instance_file>")
     #     sys.exit(1)
 
-    # board = Board.parse_instance(sys.argv[1])
+    board = Board.parse_instance(sys.argv[1])
 
     # i1.txt do enunciado
-    board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
+    # board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
     # board = Board(3, [[9,4,3],[8,5,2],[7,6,1]])
 
     problem = Numbrix(board)
-    goal_node = astar_search(problem)
+    goal_node = greedy_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution:\n", goal_node.state.board.to_string(), sep="")
