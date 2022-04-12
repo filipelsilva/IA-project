@@ -203,9 +203,13 @@ class Numbrix(Problem):
                     adjacents += state.board.adjacent_horizontal_numbers(row, col)
                     test = [i + 1 for i in adjacents if i != None and i != 0]
                     test += [i - 1 for i in adjacents if i != None and i != 0]
+                    add_to_ret = []
                     for val in test:
                         if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
-                            ret += [(row, col, val)]
+                            add_to_ret += [(row, col, val)]
+                    if adjacents.count(0) == 0:
+                        return unique(add_to_ret)
+                    ret += add_to_ret
         return unique(ret)
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
