@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import sys
+from tkinter.messagebox import NO
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 from utils import unique
 from itertools import chain, combinations #TODO podemos importar isto? (é usado no utils)
@@ -32,7 +33,7 @@ class NumbrixState:
         return self.id < other.id
 
     def recursive_chain_counter(self, explored, row, col, val):
-        ret = 0
+        ret = 1
         adjacents = self.board.adjacent_vertical_numbers(row, col) 
         adjacents += self.board.adjacent_horizontal_numbers(row, col)
         if val+1 in adjacents and val+1 not in explored:
@@ -184,11 +185,47 @@ class Numbrix(Problem):
         adjacents = state.board.adjacent_vertical_numbers(action[0], action[1]) 
         adjacents += state.board.adjacent_horizontal_numbers(action[0], action[1])
 
+        if ((action[2] != state.board.N and action[2]+1 not in adjacents and state.board.find_number(action[2]+1) != (None, None))
+                or (action[2] != 1 and action[2]-1 not in adjacents and state.board.find_number(action[2]-1) != (None, None))):
+            return False
+
         if (action[2] in adjacents
                 or action[2] > state.board.N**2
                 or action[2] < 1
                 or state.board.find_number(action[2]) != (None, None)):
             return False
+        
+        if(action[2] != 1 
+                and action[2] != state.board.N
+                and adjacents.count(0) == 0 
+                and (action[2]-1 not in adjacents or action[2]+1 not in adjacents)):
+            return False
+        
+        new_state = self.result(state, action)
+        possible_values = new_state.board.possible_values()
+
+        for val in adjacents:
+            if (val is not None):
+                row, col = new_state.board.find_number(val)
+                val_adjacents = new_state.board.adjacent_vertical_numbers(row, col) 
+                val_adjacents += new_state.board.adjacent_horizontal_numbers(row, col)
+                if (val_adjacents.count(0) == 0 and ((val+1 in possible_values and val+1 not in val_adjacents) 
+                        or (val-1 in possible_values and val-1 not in val_adjacents))):
+                    return False
+
+        for row in range(new_state.board.N):
+            for col in range(new_state.board.N):
+                val = new_state.board.get_number(row, col)
+                if val == 0:
+                    adjacents = new_state.board.adjacent_vertical_numbers(row, col) 
+                    adjacents += new_state.board.adjacent_horizontal_numbers(row, col)
+                    if (adjacents.count(0) == 0):
+                        pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2,3)))[1:]
+                        for pair in pairs:
+                            if (pair[1] is None or pair[0] is None):
+                                continue
+                            if (pair[1] - pair[0] == 2 and pair[1]-1 not in possible_values):
+                                return False
 
         return True
 
@@ -211,29 +248,25 @@ class Numbrix(Problem):
                         pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2,3)))[1:]
                         add_to_ret = []
                         for pair in pairs:
-                            if(pair[1] is None or pair[0] is None):
+                            if (pair[1] is None or pair[0] is None):
                                 continue
-                            if pair[1] - pair[0] == 2:
-                                add_to_ret += [(row, col, pair[1]-1)]
-
-                        if len(add_to_ret) != 0 :
-                            return add_to_ret
+                            if (pair[1] - pair[0] == 2 and self.is_valid_action(state, (row, col, pair[1]-1))):
+                                return [(row, col, pair[1]-1)]
                             
                         else:
-                            test = [i + 1 for i in adjacents if i != None and i != 0]
-                            test += [i - 1 for i in adjacents if i != None and i != 0]                            
+                            test = [i + 1 for i in adjacents if i != None and i != 0 and i != state.board.N]
+                            test += [i - 1 for i in adjacents if i != None and i != 0 and i != 1]                            
                             for val in test:
                                 if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
                                     add_to_ret += [(row, col, val)]
                             if adjacents.count(0) == 0:
                                 return unique(add_to_ret)
 
-                    test = [i + 1 for i in adjacents if i != None and i != 0]
-                    test += [i - 1 for i in adjacents if i != None and i != 0]
+                    test = [i + 1 for i in adjacents if i != None and i != 0 and i != state.board.N]
+                    test += [i - 1 for i in adjacents if i != None and i != 0 and i != 1]
                     for val in test:
                         if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
                             ret += [(row, col, val)]
-                    
         return unique(ret)
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
@@ -286,7 +319,7 @@ class Numbrix(Problem):
             #best option
             if(action[2]+1 in action_adjacents and action[2]-1 in action_adjacents):
                 return 0
-            if(action[2]+1 in action_adjacents or action[2]-1 in action_adjacents and action_adjacents.count(0) == 0):
+            if((action[2]+1 in action_adjacents or action[2]-1 in action_adjacents) and action_adjacents.count(0) == 0):
                 return 0
         #TODO reduce complexity
         return self.initial.board.N**2 - state.longest_chain_size()
