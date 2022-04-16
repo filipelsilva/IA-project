@@ -15,7 +15,9 @@ import sys
 from tkinter.messagebox import NO
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 from utils import unique
-from itertools import chain, combinations #TODO podemos importar isto? (é usado no utils)
+# TODO podemos importar isto? (é usado no utils)
+from itertools import chain, combinations
+from copy import deepcopy
 
 class NumbrixState:
     state_id = 0
@@ -67,62 +69,50 @@ class NumbrixState:
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
-    def __init__(self, N: int, board: list):
+    def __init__(self, N: int, board: dict):
         self.N = N
         self.board = board
 
     def get_number(self, row: int, col: int) -> int | None:
         """ Devolve o valor na respetiva posição do tabuleiro. """
         if 0 <= row < self.N and 0 <= col < self.N:
-            return self.board[row][col]
+            values = list(self.board.values())
+            if (row, col) in values:
+                return list(self.board.keys())[values.index((row, col))]
+            else:
+                return 0
 
         return None
 
+    def set_number(self, row: int, col: int, value: int):
+        """ Coloca o valor na respetiva posição do tabuleiro. """
+        self.board[value] = (row, col)
+
     def find_number(self, value: int) -> tuple[int, int] | tuple[None, None]:
         """ Deveolve a localização do valor no tabuleiro. """
-        for rows in range(self.N):
-            for cols in range(self.N):
-                if self.board[rows][cols] == value:
-                    return (rows, cols)
+        if value in self.board.keys():
+            return self.board[value]
 
-        return None, None
+        return (None, None)
 
     def possible_values(self) -> set:
         """ Devolve a lista de valores que não foram ainda colocados
         no tabuleiro """
         all_values = set(range(1, self.N**2 + 1))
-        placed_values = set(v for row in self.board for v in row)
+        placed_values = set(self.board.keys())
         return all_values.difference(placed_values)
 
     def find_mininum(self) -> tuple[int | None, int | None, int]:
         # TODO descricao e ver onde se usa
-        minimum = self.N ** 2 + 1
-        row = None
-        col = None
-
-        for rows in range(self.N):
-            for cols in range(self.N):
-                value = self.board[rows][cols]
-                if value < minimum:
-                    row = rows
-                    col = cols
-                    minimum = value
+        minimum = min(self.board.keys())
+        row, col = self.board[minimum]
 
         return (row, col, minimum)
 
     def find_maximum(self) -> tuple[int | None, int | None, int]:
         # TODO descricao e ver onde se usa
-        maximum = 0
-        row = None
-        col = None
-
-        for rows in range(self.N):
-            for cols in range(self.N):
-                value = self.board[rows][cols]
-                if value > maximum:
-                    row = rows
-                    col = cols
-                    maximum = value
+        maximum = max(self.board.keys())
+        row, col = self.board[maximum]
 
         return (row, col, maximum)
 
@@ -143,7 +133,15 @@ class Board:
 
         with open(filename, 'r') as file:
             N = int(file.readline()[:-1])
-            board = list(map(lambda x: list(map(int, x[:-1].split('\t'))), file.readlines()))
+            board_list = list(map(lambda x: list(map(int, x[:-1].split('\t'))), file.readlines()))
+            board = dict()
+            for row in range(N):
+                for col in range(N):
+                    tmp = board_list[row][col]
+                    if tmp != 0:
+                        board[tmp] = (row, col)
+
+            print(board)
 
         return Board(N, board)
 
@@ -275,9 +273,10 @@ class Numbrix(Problem):
         das presentes na lista obtida pela execução de
         self.actions(state). """
 
-        copy_board = [line[:] for line in state.board.board]
+        copy_board = deepcopy(self.board)
         row, col, value = action
-        copy_board[row][col] = value
+        copy_board.set_number(row, col, value)
+
         return NumbrixState(Board(state.board.N, copy_board))
 
     def goal_test(self, state: NumbrixState):
@@ -341,7 +340,7 @@ if __name__ == "__main__":
     board = Board.parse_instance(sys.argv[1])
 
     # i1.txt do enunciado
-    # board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
+    # board = Board(3, {2: (1,2), 6: (2,1)})
     # board = Board(3, [[9,4,3],[8,5,2],[7,6,1]])
 
     problem = Numbrix(board)
