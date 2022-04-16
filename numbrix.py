@@ -15,8 +15,7 @@ import sys
 from tkinter.messagebox import NO
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, recursive_best_first_search
 from utils import unique
-# TODO podemos importar isto? (é usado no utils)
-from itertools import chain, combinations
+from itertools import chain, combinations #TODO podemos importar isto? (é usado no utils)
 from copy import deepcopy
 
 class NumbrixState:
@@ -36,7 +35,7 @@ class NumbrixState:
 
     def recursive_chain_counter(self, explored, row, col, val):
         ret = 1
-        adjacents = self.board.adjacent_vertical_numbers(row, col) 
+        adjacents = self.board.adjacent_vertical_numbers(row, col)
         adjacents += self.board.adjacent_horizontal_numbers(row, col)
         if val+1 in adjacents and val+1 not in explored:
             new_row, new_col = self.board.find_number(val+1)
@@ -76,43 +75,43 @@ class Board:
     def get_number(self, row: int, col: int) -> int | None:
         """ Devolve o valor na respetiva posição do tabuleiro. """
         if 0 <= row < self.N and 0 <= col < self.N:
-            values = list(self.board.values())
-            if (row, col) in values:
-                return list(self.board.keys())[values.index((row, col))]
-            else:
-                return 0
+            return self.board[(row, col)]
 
         return None
 
     def set_number(self, row: int, col: int, value: int):
         """ Coloca o valor na respetiva posição do tabuleiro. """
-        self.board[value] = (row, col)
+        self.board[(row, col)] = value
 
     def find_number(self, value: int) -> tuple[int, int] | tuple[None, None]:
         """ Deveolve a localização do valor no tabuleiro. """
-        if value in self.board.keys():
-            return self.board[value]
+        values = list(self.board.values())
+        if value in values:
+            row, col = list(self.board.keys())[values.index(value)]
+            return (row, col)
 
-        return (None, None)
+        return None, None
 
     def possible_values(self) -> set:
         """ Devolve a lista de valores que não foram ainda colocados
         no tabuleiro """
         all_values = set(range(1, self.N**2 + 1))
-        placed_values = set(self.board.keys())
+        placed_values = set(self.board.values())
         return all_values.difference(placed_values)
 
-    def find_mininum(self) -> tuple[int | None, int | None, int]:
+    def find_mininum(self) -> tuple[int, int, int]:
         # TODO descricao e ver onde se usa
-        minimum = min(self.board.keys())
-        row, col = self.board[minimum]
+        values = list(self.board.values())
+        minimum = min(values)
+        row, col = list(self.board.keys())[values.index(minimum)]
 
         return (row, col, minimum)
 
-    def find_maximum(self) -> tuple[int | None, int | None, int]:
+    def find_maximum(self) -> tuple[int, int, int]:
         # TODO descricao e ver onde se usa
-        maximum = max(self.board.keys())
-        row, col = self.board[maximum]
+        values = list(self.board.values())
+        maximum = max(values)
+        row, col = list(self.board.keys())[values.index(maximum)]
 
         return (row, col, maximum)
 
@@ -133,24 +132,27 @@ class Board:
 
         with open(filename, 'r') as file:
             N = int(file.readline()[:-1])
-            board_list = list(map(lambda x: list(map(int, x[:-1].split('\t'))), file.readlines()))
+            board_tmp = list(map(lambda x: list(map(int, x[:-1].split('\t'))), file.readlines()))
             board = dict()
             for row in range(N):
                 for col in range(N):
-                    tmp = board_list[row][col]
-                    if tmp != 0:
-                        board[tmp] = (row, col)
-
-            print(board)
+                    board[(row, col)] = board_tmp[row][col]
 
         return Board(N, board)
 
     def __repr__(self):
         ret = ""
 
-        for line in self.board:
-            ret += '\t'.join(map(str, line))
+        for row in range(self.N):
+            for col in range(self.N):
+                ret += str(self.board[(row, col)])
+                ret += '\t'
             ret += '\n'
+
+
+        # for line in self.board:
+        #     ret += '\t'.join(map(str, line))
+        #     ret += '\n'
 
         return ret
 
@@ -180,7 +182,7 @@ class Numbrix(Problem):
                 or action[1] < 0 or action[1] >= state.board.N):
             return False
 
-        adjacents = state.board.adjacent_vertical_numbers(action[0], action[1]) 
+        adjacents = state.board.adjacent_vertical_numbers(action[0], action[1])
         adjacents += state.board.adjacent_horizontal_numbers(action[0], action[1])
 
         if ((action[2] != state.board.N and action[2]+1 not in adjacents and state.board.find_number(action[2]+1) != (None, None))
@@ -192,22 +194,22 @@ class Numbrix(Problem):
                 or action[2] < 1
                 or state.board.find_number(action[2]) != (None, None)):
             return False
-        
-        if(action[2] != 1 
+
+        if(action[2] != 1
                 and action[2] != state.board.N
-                and adjacents.count(0) == 0 
+                and adjacents.count(0) == 0
                 and (action[2]-1 not in adjacents or action[2]+1 not in adjacents)):
             return False
-        
+
         new_state = self.result(state, action)
         possible_values = new_state.board.possible_values()
 
         for val in adjacents:
             if (val is not None):
                 row, col = new_state.board.find_number(val)
-                val_adjacents = new_state.board.adjacent_vertical_numbers(row, col) 
+                val_adjacents = new_state.board.adjacent_vertical_numbers(row, col)
                 val_adjacents += new_state.board.adjacent_horizontal_numbers(row, col)
-                if (val_adjacents.count(0) == 0 and ((val+1 in possible_values and val+1 not in val_adjacents) 
+                if (val_adjacents.count(0) == 0 and ((val+1 in possible_values and val+1 not in val_adjacents)
                         or (val-1 in possible_values and val-1 not in val_adjacents))):
                     return False
 
@@ -215,7 +217,7 @@ class Numbrix(Problem):
             for col in range(new_state.board.N):
                 val = new_state.board.get_number(row, col)
                 if val == 0:
-                    adjacents = new_state.board.adjacent_vertical_numbers(row, col) 
+                    adjacents = new_state.board.adjacent_vertical_numbers(row, col)
                     adjacents += new_state.board.adjacent_horizontal_numbers(row, col)
                     if (adjacents.count(0) == 0):
                         pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2,3)))[1:]
@@ -241,7 +243,7 @@ class Numbrix(Problem):
                 if (value == 0):
                     adjacents = state.board.adjacent_vertical_numbers(row, col)
                     adjacents += state.board.adjacent_horizontal_numbers(row, col)
-                    
+
                     if (adjacents.count(0) == 0):
                         pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2,3)))[1:]
                         add_to_ret = []
@@ -250,10 +252,10 @@ class Numbrix(Problem):
                                 continue
                             if (pair[1] - pair[0] == 2 and self.is_valid_action(state, (row, col, pair[1]-1))):
                                 return [(row, col, pair[1]-1)]
-                            
+
                         else:
                             test = [i + 1 for i in adjacents if i != None and i != 0 and i != state.board.N]
-                            test += [i - 1 for i in adjacents if i != None and i != 0 and i != 1]                            
+                            test += [i - 1 for i in adjacents if i != None and i != 0 and i != 1]
                             for val in test:
                                 if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
                                     add_to_ret += [(row, col, val)]
@@ -272,12 +274,12 @@ class Numbrix(Problem):
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
         self.actions(state). """
-
-        copy_board = deepcopy(self.board)
+        copy_board = deepcopy(state.board.board)
+        new_board = Board(state.board.N, copy_board)
         row, col, value = action
-        copy_board.set_number(row, col, value)
+        new_board.set_number(row, col, value)
 
-        return NumbrixState(Board(state.board.N, copy_board))
+        return NumbrixState(new_board)
 
     def goal_test(self, state: NumbrixState):
         """ Retorna True se e só se o estado passado como argumento é
@@ -339,11 +341,7 @@ if __name__ == "__main__":
 
     board = Board.parse_instance(sys.argv[1])
 
-    # i1.txt do enunciado
-    # board = Board(3, {2: (1,2), 6: (2,1)})
-    # board = Board(3, [[9,4,3],[8,5,2],[7,6,1]])
-
     problem = Numbrix(board)
-    goal_node = greedy_search(problem)
+    goal_node = astar_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution:\n", goal_node.state.board.to_string(), sep="")
