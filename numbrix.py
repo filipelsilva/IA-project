@@ -345,8 +345,8 @@ class Numbrix(Problem):
             # best option
             if action[2] + 1 in action_adjacents and action[2] - 1 in action_adjacents:
                 return 0
-            if ((action[2] + 1 in action_adjacents or action[2] - 1 in action_adjacents) and action_adjacents.count(
-                    0) == 0):
+            if (action[2] + 1 in action_adjacents or action[2] - 1 in action_adjacents) \
+                    and action_adjacents.count(0) == 0:
                 return 0
         # TODO reduce complexity
         return self.initial.board.N ** 2 - state.longest_sequence_size()
