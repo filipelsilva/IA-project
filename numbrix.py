@@ -78,8 +78,12 @@ class Board:
 
         return None
 
+    def set_number(self, row: int, col: int, value: int):
+        """ Coloca o valor na respetiva posição do tabuleiro. """
+        self.board[row][col] = value
+
     def find_number(self, value: int) -> tuple[int, int] | tuple[None, None]:
-        """ Deveolve a localização do valor no tabuleiro. """
+        """ Devolve a localização do valor no tabuleiro. """
         for rows in range(self.N):
             for cols in range(self.N):
                 if self.board[rows][cols] == value:
@@ -136,11 +140,15 @@ class Board:
         respectivamente. """
         return self.get_number(row, col - 1), self.get_number(row, col + 1)
 
+    def get_copy(self):
+        """ Devolve uma cópia da Board. """
+        copy_board = [line[:] for line in self.board]
+        return Board(self.N, copy_board)
+
     @staticmethod
     def parse_instance(filename: str):
         """ Lê o ficheiro cujo caminho é passado como argumento e retorna
         uma instância da classe Board. """
-
         with open(filename, 'r') as file:
             N = int(file.readline()[:-1])
             board = list(map(lambda x: list(map(int, x[:-1].split('\t'))), file.readlines()))
@@ -274,11 +282,11 @@ class Numbrix(Problem):
         'state' passado como argumento. A ação a executar deve ser uma
         das presentes na lista obtida pela execução de
         self.actions(state). """
-
-        copy_board = [line[:] for line in state.board.board]
+        copy_board = state.board.get_copy()
         row, col, value = action
-        copy_board[row][col] = value
-        return NumbrixState(Board(state.board.N, copy_board))
+        copy_board.set_number(row, col, value)
+
+        return NumbrixState(copy_board)
 
     def goal_test(self, state: NumbrixState):
         """ Retorna True se e só se o estado passado como argumento é
