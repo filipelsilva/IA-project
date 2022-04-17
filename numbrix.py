@@ -42,13 +42,13 @@ class NumbrixState:
         if val+1 in adjacents and val+1 not in explored:
             new_row, new_col = self.board.find_number(val+1)
             explored += [val+1]
-            ret = 1 + self.recursive_sequence_counter(explored, new_row, new_col, val+1)
+            ret += self.recursive_sequence_counter(explored, new_row, new_col, val+1)
         
         # encontra o valor anterior na cadeia
-        if val-1 in adjacents and val-1 not in explored:
+        if val-1 in adjacents and val-1 not in explored and val-1 != 0:
             new_row, new_col = self.board.find_number(val-1)
             explored += [val-1]
-            ret = 1 + self.recursive_sequence_counter(explored, new_row, new_col, val-1)
+            ret += self.recursive_sequence_counter(explored, new_row, new_col, val-1)
 
         return ret
 
