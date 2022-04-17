@@ -26,35 +26,43 @@ class NumbrixState:
         NumbrixState.state_id += 1
 
     def __lt__(self, other):
-        s_size = self.longest_chain_size()
-        o_size = other.longest_chain_size()
+        s_size = self.longest_sequence_size()
+        o_size = other.longest_sequence_size()
         if s_size != o_size:
             return s_size > o_size
         return self.id < other.id
 
-    def recursive_chain_counter(self, explored, row, col, val):
+    def recursive_sequence_counter(self, explored, row, col, val):
+        """ Devolve o comprimento da sequência de números seguidos que contem um 
+        dado valor numa dada posicao """
         ret = 1
-        adjacents = self.board.adjacent_vertical_numbers(row, col) 
-        adjacents += self.board.adjacent_horizontal_numbers(row, col)
+        adjacents = self.board.get_all_adjacents(row, col)
+
+        # encontra o valor seguinte na cadeia
         if val+1 in adjacents and val+1 not in explored:
             new_row, new_col = self.board.find_number(val+1)
             explored += [val+1]
-            ret = 1 + self.recursive_chain_counter(explored, new_row, new_col, val+1)
+            ret = 1 + self.recursive_sequence_counter(explored, new_row, new_col, val+1)
+        
+        # encontra o valor anterior na cadeia
         if val-1 in adjacents and val-1 not in explored:
             new_row, new_col = self.board.find_number(val-1)
             explored += [val-1]
-            ret = 1 + self.recursive_chain_counter(explored, new_row, new_col, val-1)
+            ret = 1 + self.recursive_sequence_counter(explored, new_row, new_col, val-1)
+
         return ret
 
-    def longest_chain_size(self) -> int:
+    def longest_sequence_size(self) -> int:
+        """ Devolve o comprimento da sequência de números seguidos mais longa 
+        no tabuleiro """
         max = 0
         explored = []
         for row in range(self.board.N):
             for col in range(self.board.N):
                 val = self.board.get_number(row, col)
-                if (val != 0):
+                if (val != 0 and val not in explored):
                     explored += [val]
-                    ret = self.recursive_chain_counter(explored, row, col, val)
+                    ret = self.recursive_sequence_counter(explored, row, col, val)
                     if ret > max:
                         max = ret
                 if max > self.board.N**2:
@@ -140,6 +148,13 @@ class Board:
         respectivamente. """
         return self.get_number(row, col - 1), self.get_number(row, col + 1)
 
+    def get_all_adjacents(self, row, col):
+        """ Devolve os valores imediatamente abaixo, acima, à esquerda e 
+        à direita, respetivamente. """
+        adjacents = self.adjacent_vertical_numbers(row, col) 
+        adjacents += self.adjacent_horizontal_numbers(row, col)
+        return adjacents
+
     def get_copy(self):
         """ Devolve uma cópia da Board. """
         copy_board = [line[:] for line in self.board]
@@ -186,47 +201,46 @@ class Numbrix(Problem):
         #TODO é possível por isto a cortar jogadas q nao vao fazer sentido no futuro
         # mas dá um bcd trabalho e se calhar a heuristica faz isto / é suficiente
 
-        if (action[0] < 0 or action[0] >= state.board.N
-                or action[1] < 0 or action[1] >= state.board.N):
-            return False
+        adjacents = state.board.get_all_adjacents(action[0], action[1])
+        possible_values = state.board.possible_values()
 
-        adjacents = state.board.adjacent_vertical_numbers(action[0], action[1]) 
-        adjacents += state.board.adjacent_horizontal_numbers(action[0], action[1])
-
-        if ((action[2] != state.board.N and action[2]+1 not in adjacents and state.board.find_number(action[2]+1) != (None, None))
-                or (action[2] != 1 and action[2]-1 not in adjacents and state.board.find_number(action[2]-1) != (None, None))):
-            return False
-
-        if (action[2] in adjacents
-                or action[2] > state.board.N**2
-                or action[2] < 1
-                or state.board.find_number(action[2]) != (None, None)):
+        # o valor não está a ser colocado ao lado do seu sucessor/antecessor que já está no tabuleiro
+        if ((action[2] != state.board.N**2 and action[2]+1 not in adjacents and action[2]+1 not in possible_values)
+                or (action[2] != 1 and action[2]-1 not in adjacents and action[2]-1 not in possible_values)):
             return False
         
-        if(action[2] != 1 
-                and action[2] != state.board.N
-                and adjacents.count(0) == 0 
-                and (action[2]-1 not in adjacents or action[2]+1 not in adjacents)):
+        # o valor está ser colocado impossibilitando a colocação futura do seu sucessor/antecessor
+        if (adjacents.count(0) == 0 
+                and (action[2]+1 in possible_values or action[2]-1 in possible_values)):
+            return False
+        #TODO ver pq nao entra neste if
+        if (adjacents.count(0) == 1 
+                and action[2]+1 in possible_values and action[2]-1 in possible_values):
             return False
         
         new_state = self.result(state, action)
         possible_values = new_state.board.possible_values()
 
+        # o valor está ser colocado impossibilitando a colocação futura do sucessor/antecessor
+        # de um dos seus números adjacentes
         for val in adjacents:
             if (val is not None):
                 row, col = new_state.board.find_number(val)
-                val_adjacents = new_state.board.adjacent_vertical_numbers(row, col) 
-                val_adjacents += new_state.board.adjacent_horizontal_numbers(row, col)
-                if (val_adjacents.count(0) == 0 and ((val+1 in possible_values and val+1 not in val_adjacents) 
-                        or (val-1 in possible_values and val-1 not in val_adjacents))):
+                val_adjacents = new_state.board.get_all_adjacents(row, col) 
+                if (val_adjacents.count(0) == 0 
+                        and (val+1 in possible_values or val-1 in possible_values)):
+                    return False
+                if (val_adjacents.count(0) == 1
+                        and val+1 in possible_values and val-1 in possible_values):
                     return False
 
+        # o valor esta a ser colocado de forma a ficarem espacos vazios 
+        # entre o numero x-1 e x+1 sabendo que x já foi colocado noutro sitio
         for row in range(new_state.board.N):
             for col in range(new_state.board.N):
                 val = new_state.board.get_number(row, col)
                 if val == 0:
-                    adjacents = new_state.board.adjacent_vertical_numbers(row, col) 
-                    adjacents += new_state.board.adjacent_horizontal_numbers(row, col)
+                    adjacents = new_state.board.get_all_adjacents(row, col) 
                     if (adjacents.count(0) == 0):
                         pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2,3)))[1:]
                         for pair in pairs:
@@ -245,36 +259,38 @@ class Numbrix(Problem):
         # min_row, min_col, minimum = state.board.find_mininum()
         possible_vals = state.board.possible_values()
         ret = []
+
+        # percorrer todas as posições vazias do tabuleiro
         for row in range(state.board.N):
             for col in range(state.board.N):
                 value = state.board.get_number(row, col)
                 if (value == 0):
-                    adjacents = state.board.adjacent_vertical_numbers(row, col)
-                    adjacents += state.board.adjacent_horizontal_numbers(row, col)
+                    adjacents = state.board.get_all_adjacents(row, col)
                     
+                    # todas as posições adjacentes estão preenchidas, logo ação obrigatória
                     if (adjacents.count(0) == 0):
+                        ret = []
                         pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2,3)))[1:]
-                        add_to_ret = []
+                        
+                        # descobrir qual o valor a colocar entre os adjacentes val+1 e val-1
                         for pair in pairs:
                             if (pair[1] is None or pair[0] is None):
                                 continue
                             if (pair[1] - pair[0] == 2 and self.is_valid_action(state, (row, col, pair[1]-1))):
                                 return [(row, col, pair[1]-1)]
-                            
-                        else:
-                            test = [i + 1 for i in adjacents if i != None and i != 0 and i != state.board.N]
-                            test += [i - 1 for i in adjacents if i != None and i != 0 and i != 1]                            
-                            for val in test:
-                                if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
-                                    add_to_ret += [(row, col, val)]
-                            if adjacents.count(0) == 0:
-                                return unique(add_to_ret)
+                        if self.is_valid_action(state, (row, col, 1)):
+                            return [(row, col, 1)]
+                        elif self.is_valid_action(state, (row, col, state.board.N**2)):
+                            return [(row, col, state.board.N**2)]
 
-                    test = [i + 1 for i in adjacents if i != None and i != 0 and i != state.board.N]
-                    test += [i - 1 for i in adjacents if i != None and i != 0 and i != 1]
-                    for val in test:
-                        if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
-                            ret += [(row, col, val)]
+                    # adicionar à lista de ações colocar o antecessor/sucessor de um valor
+                    # nas posições adjacentes se for possível
+                    else:
+                        test = [i + 1 for i in adjacents if i != None and i != 0 and i != state.board.N**2]
+                        test += [i - 1 for i in adjacents if i != None and i != 0 and i != 1]
+                        for val in test:
+                            if (val in possible_vals and self.is_valid_action(state, (row, col, val))):
+                                ret += [(row, col, val)]
         return unique(ret)
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
@@ -322,15 +338,14 @@ class Numbrix(Problem):
         action = node.action
         state = node.state
         if(action is not None):
-            action_adjacents = state.board.adjacent_horizontal_numbers(action[0], action[1])
-            action_adjacents += state.board.adjacent_vertical_numbers(action[0], action[1])
+            action_adjacents = state.board.get_all_adjacents(action[0], action[1])
             #best option
             if(action[2]+1 in action_adjacents and action[2]-1 in action_adjacents):
                 return 0
             if((action[2]+1 in action_adjacents or action[2]-1 in action_adjacents) and action_adjacents.count(0) == 0):
                 return 0
         #TODO reduce complexity
-        return self.initial.board.N**2 - state.longest_chain_size()
+        return self.initial.board.N**2 - state.longest_sequence_size()
 
     # TODO: outros metodos da classe
 
