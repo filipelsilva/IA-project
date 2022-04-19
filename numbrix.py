@@ -140,6 +140,8 @@ class Numbrix(Problem):
 
             if len(to_check) == 2 and 2 in Board.get_distance(to_check[0], to_check[1]):
                 # Se estiverem separados por um 0, pode-se colocar lá o valor, será o mais correto
+                # FIXME comparar distância entre to_check com diferença de valores entre possible value e to_check
+                # FIXME fazer cantos
                 row = (to_check[0][0] + to_check[1][0]) // 2
                 col = (to_check[0][1] + to_check[1][1]) // 2
                 if state.board.get_number(row, col) == 0:
