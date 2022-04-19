@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import sys
 from tkinter.messagebox import NO
+
+from more_itertools import adjacent
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, \
     recursive_best_first_search
 from utils import unique
@@ -32,6 +34,12 @@ class NumbrixState:
         o_size = other.longest_sequence_size()
         if s_size != o_size:
             return s_size > o_size
+
+        s_size = self.largest_free_area()
+        o_size = other.largest_free_area()
+        if s_size != o_size:
+            return s_size > o_size
+
         return self.id < other.id
 
     def recursive_sequence_counter(self, explored, row, col, val):
@@ -67,9 +75,86 @@ class NumbrixState:
                     ret = self.recursive_sequence_counter(explored, row, col, val)
                     if ret > max:
                         max = ret
-                if max > self.board.N ** 2:
+                if max > self.board.N / 2:
                     return max
         return max
+
+    def recursive_free_area_counter(self, explored, row, col):
+        ret = 1
+        adjacents = self.board.get_all_adjacents(row, col)
+
+        #abaixo
+        if adjacents[0] == 0 and (row + 1, col) not in explored:
+            explored += [(row + 1, col)]
+            ret += self.recursive_free_area_counter(explored, row + 1, col)
+            
+        #acima
+        if adjacents[1] == 0 and (row - 1, col) not in explored:
+            explored += [(row - 1, col)]
+            ret += self.recursive_free_area_counter(explored, row - 1, col)
+        
+        #esquerda
+        if adjacents[2] == 0 and (row, col - 1) not in explored:
+            explored += [(row, col - 1)]
+            ret += self.recursive_free_area_counter(explored, row, col - 1)
+        
+        #direita
+        if adjacents[3] == 0 and (row, col + 1) not in explored:
+            explored += [(row, col + 1)]
+            ret += self.recursive_free_area_counter(explored, row, col + 1)
+
+        return ret
+
+    def largest_free_area(self) -> int:
+        max = 0
+        explored = []
+        for row in range(self.board.N):
+            for col in range(self.board.N):
+                val = self.board.get_number(row, col)
+                if val == 0 and (row, col) not in explored:
+                    explored += [(row, col)]
+                    ret = self.recursive_free_area_counter(explored, row, col)
+                    if ret > max:
+                        max = ret
+                if max > self.board.N / 2:
+                    return max
+        return max
+
+
+    def recursive_path_counter(self, path, len, obj_len, obj, found):
+        """ Devolve o comprimento da sequência de números seguidos que contem um 
+        dado valor numa dada posicao """
+        row, col = path[-1]
+        adjacents = self.board.get_all_adjacents(row, col)
+
+        if len == obj_len and obj in adjacents:
+            found = True
+            return found
+
+        #abaixo
+        if adjacents[0] == 0 and (row + 1, col) not in path and not found:
+            found = self.recursive_path_counter(path + [(row + 1, col)], len + 1, obj_len, obj, found)
+            
+        #acima
+        if adjacents[1] == 0 and (row - 1, col) not in path and not found:
+            found = self.recursive_path_counter(path + [(row - 1, col)], len + 1, obj_len, obj, found)
+        
+        #esquerda
+        if adjacents[2] == 0 and (row, col - 1) not in path and not found:
+            found = self.recursive_path_counter(path + [(row, col - 1)], len + 1, obj_len, obj, found)
+        
+        #direita
+        if adjacents[3] == 0 and (row, col + 1) not in path and not found:
+            found = self.recursive_path_counter(path + [(row, col + 1)], len + 1, obj_len, obj, found)
+
+        return found
+    
+    def exists_valid_path_between(self, val1, val2):
+        row, col = self.board.find_number(val1)
+        obj_len = val2 - val1 - 1
+        if self.recursive_path_counter([(row, col)], 0, obj_len, val2, False):
+            return True
+        return False
 
     # TODO: outros metodos da classe
 
@@ -101,12 +186,15 @@ class Board:
 
         return None, None
 
+    def placed_values(self) -> set:
+        """ Devolve a lista de valores que foram colocados no tabuleiro """
+        return sorted(set(v for row in self.board for v in row if v != 0))
+
     def possible_values(self) -> set:
         """ Devolve a lista de valores que não foram ainda colocados
         no tabuleiro """
         all_values = set(range(1, self.N ** 2 + 1))
-        placed_values = set(v for row in self.board for v in row)
-        return all_values.difference(placed_values)
+        return all_values.difference(self.placed_values())
 
     def find_mininum(self) -> tuple[int | None, int | None, int]:
         # TODO descricao e ver onde se usa
@@ -193,7 +281,7 @@ class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
         self.initial = NumbrixState(board)
-
+        
     def is_valid_action(self, state: NumbrixState, action: tuple[int, int, int]) -> bool:
         """ Retorna um booleano referente à possibilidade de executar a 'action'
         passada como argumento sobre o 'state' passado como argumento.
@@ -251,6 +339,12 @@ class Numbrix(Problem):
                                 continue
                             if pair[1] - pair[0] == 2 and pair[1] - 1 not in possible_values:
                                 return False
+        
+        # o valor colocado impede a ligação entre os valores colocados
+        placed_values = new_state.board.placed_values()
+        for i in range(len(placed_values) - 1):
+            if not new_state.exists_valid_path_between(placed_values[i], placed_values[i + 1]):
+                return False
 
         return True
 
@@ -349,7 +443,7 @@ class Numbrix(Problem):
                     and action_adjacents.count(0) == 0:
                 return 0
         # TODO reduce complexity
-        return self.initial.board.N ** 2 - state.longest_sequence_size()
+        return self.initial.board.N ** 2 - state.longest_sequence_size() - state.largest_free_area()
 
     # TODO: outros metodos da classe
 
