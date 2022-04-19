@@ -23,41 +23,7 @@ class NumbrixState:
         NumbrixState.state_id += 1
 
     def __lt__(self, other):
-        s_size = self.longest_chain_size()
-        o_size = other.longest_chain_size()
-        if s_size != o_size:
-            return s_size > o_size
         return self.id < other.id
-
-    def recursive_chain_counter(self, explored, row, col, val):
-        ret = 1
-        adjacents = self.board.adjacent_vertical_numbers(row, col) 
-        adjacents += self.board.adjacent_horizontal_numbers(row, col)
-        if val+1 in adjacents and val+1 not in explored:
-            new_row, new_col = self.board.find_number(val+1)
-            explored += [val+1]
-            ret = 1 + self.recursive_chain_counter(explored, new_row, new_col, val+1)
-        if val-1 in adjacents and val-1 not in explored:
-            new_row, new_col = self.board.find_number(val-1)
-            explored += [val-1]
-            ret = 1 + self.recursive_chain_counter(explored, new_row, new_col, val-1)
-        return ret
-
-    def longest_chain_size(self) -> int:
-        max = 0
-        explored = []
-        for row in range(self.board.N):
-            for col in range(self.board.N):
-                val = self.board.get_number(row, col)
-                if (val != 0):
-                    explored += [val]
-                    ret = self.recursive_chain_counter(explored, row, col, val)
-                    if ret > max:
-                        max = ret
-                if max > self.board.N**2:
-                    return max
-        return max
-
 
     # TODO: outros metodos da classe
 
@@ -81,10 +47,11 @@ class Board:
 
     def find_number(self, value: int) -> tuple[int, int] | tuple[None, None]:
         """ Devolve a localização do valor no tabuleiro. """
-        for rows in range(self.N):
-            for cols in range(self.N):
-                if self.board[rows][cols] == value:
-                    return (rows, cols)
+        if 0 < value <= self.N ** 2:
+            for rows in range(self.N):
+                for cols in range(self.N):
+                    if self.board[rows][cols] == value:
+                        return rows, cols
 
         return None, None
 
@@ -94,38 +61,6 @@ class Board:
         all_values = set(range(1, self.N**2 + 1))
         placed_values = set(v for row in self.board for v in row)
         return all_values.difference(placed_values)
-
-    def find_mininum(self) -> tuple[int | None, int | None, int]:
-        # TODO descricao e ver onde se usa
-        minimum = self.N ** 2 + 1
-        row = None
-        col = None
-
-        for rows in range(self.N):
-            for cols in range(self.N):
-                value = self.board[rows][cols]
-                if value < minimum:
-                    row = rows
-                    col = cols
-                    minimum = value
-
-        return (row, col, minimum)
-
-    def find_maximum(self) -> tuple[int | None, int | None, int]:
-        # TODO descricao e ver onde se usa
-        maximum = 0
-        row = None
-        col = None
-
-        for rows in range(self.N):
-            for cols in range(self.N):
-                value = self.board[rows][cols]
-                if value > maximum:
-                    row = rows
-                    col = cols
-                    maximum = value
-
-        return (row, col, maximum)
 
     def adjacent_vertical_numbers(self, row: int, col: int) -> tuple[int | None, int | None]:
         """ Devolve os valores imediatamente abaixo e acima,
@@ -141,6 +76,14 @@ class Board:
         """ Devolve uma cópia da Board. """
         copy_board = [line[:] for line in self.board]
         return Board(self.N, copy_board)
+
+    @staticmethod
+    def get_distance(position1: tuple[int, int], position2: tuple[int, int]) -> tuple[int, int]:
+        return abs(position1[0] - position2[0]), abs(position1[1] - position2[1])
+
+    @staticmethod
+    def get_manhattan_distance(position1: tuple[int, int], position2: tuple[int, int]) -> int:
+        return abs(position1[0] - position2[0]) + abs(position1[1] - position2[1])
 
     @staticmethod
     def parse_instance(filename: str):
@@ -180,27 +123,42 @@ class Numbrix(Problem):
         ret = []
         possible_values = state.board.possible_values()
 
+        # print(state.board)
+
         for possible in possible_values:
             # Ver se i +- 1 tem posições adjacentes livres
             to_check = []
-            if possible - 1 not in possible_values:
-                to_check += [state.board.find_number(possible - 1)]
-            if possible + 1 not in possible_values:
-                to_check += [state.board.find_number(possible + 1)]
 
-            for row, col in to_check:
-                # Ver se existe alguma posição livre nos adjacentes
-                horizontal = state.board.adjacent_horizontal_numbers(row, col)
-                vertical = state.board.adjacent_vertical_numbers(row, col)
+            for val in (possible - 1, possible + 1):
+                if val not in possible_values:
+                    tmp = state.board.find_number(val)
+                    if None not in tmp:
+                        to_check += [tmp]
 
-                if horizontal[0] == 0:
-                    ret += [(row, col - 1, possible)]
-                elif horizontal[1] == 0:
-                    ret += [(row, col + 1, possible)]
-                elif vertical[0] == 0:
-                    ret += [(row + 1, col, possible)]
-                elif vertical[1] == 0:
-                    ret += [(row - 1, col, possible)]
+            # print(f"Possible: {possible}")
+            # print(f"to_check: {to_check}")
+
+            if len(to_check) == 2 and 2 in Board.get_distance(to_check[0], to_check[1]):
+                row = (to_check[0][0] + to_check[1][0]) // 2
+                col = (to_check[0][1] + to_check[1][1]) // 2
+                ret += [(row, col, possible)]
+
+            else:
+                for row, col in to_check:
+                    # Ver se existe alguma posição livre nos adjacentes
+                    horizontal = state.board.adjacent_horizontal_numbers(row, col)
+                    vertical = state.board.adjacent_vertical_numbers(row, col)
+
+                    if horizontal[0] == 0:
+                        ret += [(row, col - 1, possible)]
+                    if horizontal[1] == 0:
+                        ret += [(row, col + 1, possible)]
+                    if vertical[0] == 0:
+                        ret += [(row + 1, col, possible)]
+                    if vertical[1] == 0:
+                        ret += [(row - 1, col, possible)]
+
+            # print(f"Ret: {ret}\n")
 
         return ret
 
@@ -245,19 +203,7 @@ class Numbrix(Problem):
 
     def h(self, node: Node):
         """ Função heuristica utilizada para a procura A*. """
-
-        action = node.action
-        state = node.state
-        if(action is not None):
-            action_adjacents = state.board.adjacent_horizontal_numbers(action[0], action[1])
-            action_adjacents += state.board.adjacent_vertical_numbers(action[0], action[1])
-            #best option
-            if(action[2]+1 in action_adjacents and action[2]-1 in action_adjacents):
-                return 0
-            if((action[2]+1 in action_adjacents or action[2]-1 in action_adjacents) and action_adjacents.count(0) == 0):
-                return 0
-        #TODO reduce complexity
-        return self.initial.board.N**2 - state.longest_chain_size()
+        return self.initial.board.N ** 2
 
     # TODO: outros metodos da classe
 
@@ -280,6 +226,6 @@ if __name__ == "__main__":
     # board = Board(3, [[9,4,3],[8,5,2],[7,6,1]])
 
     problem = Numbrix(board)
-    goal_node = greedy_search(problem)
+    goal_node = depth_first_tree_search(problem)
     print("Is goal?", problem.goal_test(goal_node.state))
     print("Solution:\n", goal_node.state.board.to_string(), sep="")
