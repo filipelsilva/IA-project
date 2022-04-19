@@ -139,13 +139,14 @@ class Numbrix(Problem):
             # print(f"to_check: {to_check}")
 
             if len(to_check) == 2 and 2 in Board.get_distance(to_check[0], to_check[1]):
+                # Se estiverem separados por um 0, pode-se colocar lá o valor, será o mais correto
                 row = (to_check[0][0] + to_check[1][0]) // 2
                 col = (to_check[0][1] + to_check[1][1]) // 2
-                ret += [(row, col, possible)]
-
+                if state.board.get_number(row, col) == 0:
+                    ret += [(row, col, possible)]
             else:
+                # Ver se existe alguma posição livre nos adjacentes
                 for row, col in to_check:
-                    # Ver se existe alguma posição livre nos adjacentes
                     horizontal = state.board.adjacent_horizontal_numbers(row, col)
                     vertical = state.board.adjacent_vertical_numbers(row, col)
 
