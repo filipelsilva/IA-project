@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import sys
+from unittest import result
 
 from more_itertools import adjacent
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, \
@@ -482,7 +483,6 @@ class Numbrix(Problem):
 
                     # todas as posições adjacentes estão preenchidas, logo ação obrigatória
                     if adjacents.count(0) == 0:
-                        ret = []
                         pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2, 3)))[1:]
 
                         # descobrir qual o valor a colocar entre os adjacentes val+1 e val-1
@@ -496,6 +496,13 @@ class Numbrix(Problem):
                             return [(row, col, 1)]
                         elif self.is_valid_action(state, (row, col, state.board.N ** 2)):
                             return [(row, col, state.board.N ** 2)]
+
+        for row in range(state.board.N):
+            for col in range(state.board.N):
+                value = state.board.get_number(row, col)
+                adjacents = state.board.get_all_adjacents(row, col)
+                
+                if value == 0:
 
                     if adjacents.count(0) == 1:
 
@@ -519,28 +526,28 @@ class Numbrix(Problem):
                                 new_ret += [(row + 1, col, state.board.N ** 2)]
                             
                         #acima
-                        if adjacents[1]:
+                        if adjacents[1] == 0:
                             if self.is_valid_action(state, (row - 1, col, 1)):
                                 new_ret += [(row - 1, col, 1)]
                             elif self.is_valid_action(state, (row - 1, col, state.board.N ** 2)):
                                 new_ret += [(row - 1, col, state.board.N ** 2)]
                         
                         #esquerda
-                        if adjacents[2]:
+                        if adjacents[2] == 0:
                             if self.is_valid_action(state, (row, col - 1, 1)):
                                 new_ret += [(row, col - 1, 1)]
                             elif self.is_valid_action(state, (row, col - 1, state.board.N ** 2)):
                                 new_ret += [(row, col - 1, state.board.N ** 2)]
                         
                         #direita
-                        if adjacents[3]:
+                        if adjacents[3] == 0:
                             if self.is_valid_action(state, (row, col + 1, 1)):
                                 new_ret += [(row, col + 1, 1)]
                             elif self.is_valid_action(state, (row, col + 1, state.board.N ** 2)):
                                 new_ret += [(row, col + 1, state.board.N ** 2)]
 
-                        if len(new_ret) > 0:
-                            return new_ret
+                        if len(ret) > 0:
+                            return ret
 
                     # adicionar à lista de ações colocar o antecessor/sucessor de um valor
                     # nas posições adjacentes se for possível
