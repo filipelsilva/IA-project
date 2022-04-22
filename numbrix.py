@@ -445,7 +445,7 @@ class Numbrix(Problem):
                     if adjacents.count(0) == 0:
                         pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2, 3)))[1:]
                         for pair in pairs:
-                            if pair[1] is None or pair[0] is None:
+                            if pair[1] is None or pair[0] is None or 0 in pair:
                                 continue
                             pair = sorted(pair)
                             if pair[1] - pair[0] == 2 and pair[1] - 1 not in possible_values:
@@ -483,19 +483,48 @@ class Numbrix(Problem):
 
                     # todas as posições adjacentes estão preenchidas, logo ação obrigatória
                     if adjacents.count(0) == 0:
-                        pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2, 3)))[1:]
-
-                        # descobrir qual o valor a colocar entre os adjacentes val+1 e val-1
-                        for pair in pairs:
-                            if pair[1] is None or pair[0] is None:
-                                continue
-                            pair = sorted(pair)
-                            if pair[1] - pair[0] == 2 and self.is_valid_action(state, (row, col, pair[1] - 1)):
-                                return [(row, col, pair[1] - 1)]
                         if self.is_valid_action(state, (row, col, 1)):
                             return [(row, col, 1)]
                         elif self.is_valid_action(state, (row, col, state.board.N ** 2)):
                             return [(row, col, state.board.N ** 2)]
+                        pairs = list(chain.from_iterable(combinations(adjacents, r) for r in range(2, 3)))[1:]
+
+                        # descobrir qual o valor a colocar entre os adjacentes val+1 e val-1
+                        for pair in pairs:
+                            if pair[1] is None or pair[0] is None or 0 in pair:
+                                continue
+                            pair = sorted(pair)
+                            if pair[1] - pair[0] == 2 and self.is_valid_action(state, (row, col, pair[1] - 1)):
+                                return [(row, col, pair[1] - 1)]
+                
+                elif adjacents.count(0) == 1:
+                    #abaixo
+                    if adjacents[0] == 0:
+                        if value + 1 in possible_vals and value - 1 not in possible_vals:
+                            return [(row + 1, col, value + 1)]
+                        if value - 1 in possible_vals and value + 1 not in possible_vals:
+                            return [(row + 1, col, value - 1)]
+                        
+                    #acima
+                    if adjacents[1] == 0:
+                        if value + 1 in possible_vals and value - 1 not in possible_vals:
+                            return [(row - 1, col, value + 1)]
+                        if value - 1 in possible_vals and value + 1 not in possible_vals:
+                            return [(row - 1, col, value - 1)]
+                    
+                    #esquerda
+                    if adjacents[2] == 0:
+                        if value + 1 in possible_vals and value - 1 not in possible_vals:
+                            return [(row, col - 1, value + 1)]
+                        if value - 1 in possible_vals and value + 1 not in possible_vals:
+                            return [(row, col - 1, value - 1)]
+                    
+                    #direita
+                    if adjacents[3] == 0:
+                        if value + 1 in possible_vals and value - 1 not in possible_vals:
+                            return [(row, col + 1, value + 1)]
+                        if value - 1 in possible_vals and value + 1 not in possible_vals:
+                            return [(row, col + 1, value - 1)]
 
         for row in range(state.board.N):
             for col in range(state.board.N):
