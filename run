@@ -6,7 +6,7 @@ trap ctrl_c INT
 
 ctrl_c() {
 	echo "Aborted."
-	cleanup
+	rm -f tmp
 	exit
 }
 
@@ -29,7 +29,7 @@ one() {
 
 	if [ -f tmp ]; then
 		cat tmp
-		rm -f tmp
+		rm tmp
 	fi
 
 	echo ""
