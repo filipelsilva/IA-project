@@ -223,6 +223,7 @@ class Board:
                 else:
                     ret += '0'
                 ret += '\t'
+            ret = ret[:-1]
             ret += '\n'
 
         return ret
