@@ -11,7 +11,8 @@ import sys
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, \
     recursive_best_first_search
 import math
-import bisect 
+import bisect
+
 
 class NumbrixState:
     state_id = 0
@@ -25,7 +26,7 @@ class NumbrixState:
         if len(self.board.board) != len(other.board.board):
             return len(self.board.board) > len(other.board.board)
         return self.id < other.id
-    
+
     def recursive_path_counter(self, path, len, obj_len, obj, found):
         """ Devolve o comprimento da sequência de números seguidos que contem um 
         dado valor numa dada posicao """
@@ -37,24 +38,24 @@ class NumbrixState:
                 return True
             return False
 
-        #abaixo
+        # abaixo
         if adjacents[0] == 0 and (row + 1, col) not in path and not found:
             found = self.recursive_path_counter(path + [(row + 1, col)], len + 1, obj_len, obj, found)
-            
-        #acima
+
+        # acima
         if adjacents[1] == 0 and (row - 1, col) not in path and not found:
             found = self.recursive_path_counter(path + [(row - 1, col)], len + 1, obj_len, obj, found)
-        
-        #esquerda
+
+        # esquerda
         if adjacents[2] == 0 and (row, col - 1) not in path and not found:
             found = self.recursive_path_counter(path + [(row, col - 1)], len + 1, obj_len, obj, found)
-        
-        #direita
+
+        # direita
         if adjacents[3] == 0 and (row, col + 1) not in path and not found:
             found = self.recursive_path_counter(path + [(row, col + 1)], len + 1, obj_len, obj, found)
 
         return found
-    
+
     def exists_valid_path_between(self, val1, val2):
         obj_len = val2 - val1 - 1
         row, col = self.board.find_number(val1)
@@ -73,7 +74,7 @@ class NumbrixState:
         elif val + 1 in adjacents and val - 1 in adjacents:
             return True
         return False
-    
+
     def recursive_unreachable_path(self, explored, row, col):
         adjacents = self.board.get_all_adjacents(row, col)
         for val in adjacents:
@@ -82,30 +83,29 @@ class NumbrixState:
                 val_adjacents = self.board.get_all_adjacents(r, c)
                 if not self.val_in_place(val, val_adjacents):
                     return False
-    
-        #abaixo
+
+        # abaixo
         if adjacents[0] == 0 and (row + 1, col) not in explored:
             explored += [(row + 1, col)]
             return self.recursive_unreachable_path(explored, row + 1, col)
-            
-        #acima
+
+        # acima
         if adjacents[1] == 0 and (row - 1, col) not in explored:
             explored += [(row - 1, col)]
             return self.recursive_unreachable_path(explored, row - 1, col)
-        
-        #esquerda
+
+        # esquerda
         if adjacents[2] == 0 and (row, col - 1) not in explored:
             explored += [(row, col - 1)]
             return self.recursive_unreachable_path(explored, row, col - 1)
-        
-        #direita
+
+        # direita
         if adjacents[3] == 0 and (row, col + 1) not in explored:
             explored += [(row, col + 1)]
             return self.recursive_unreachable_path(explored, row, col + 1)
 
         return True
 
-            
     def has_unreachable_places(self):
         # há espacos que nunca vao ser preenchidos
         for row in range(self.board.N):
@@ -118,19 +118,17 @@ class NumbrixState:
                     if self.recursive_unreachable_path(explored, row, col):
                         return True
         return False
-        
 
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
-
     def __init__(self, N: int, board: dict):
         self.N = N
         self.board = board
         self.placed_values = []
         for place in board:
             bisect.insort(self.placed_values, board[place])
-    
+
     def get_number(self, row: int, col: int):
         """ Devolve o valor na respetiva posição do tabuleiro. """
         if row >= self.N or row < 0 or col >= self.N or col < 0:
@@ -138,11 +136,11 @@ class Board:
         if (row, col) in self.board:
             return self.board[(row, col)]
         return 0
-    
+
     def set_number(self, row: int, col: int, value: int):
         """ Coloca o valor na respetiva posição do tabuleiro. """
-        self.board[(row,col)] = value
-        bisect.insort(self.placed_values, value) 
+        self.board[(row, col)] = value
+        bisect.insort(self.placed_values, value)
 
     def find_number(self, value: int):
         """ Devolve a localização do valor no tabuleiro. """
@@ -151,9 +149,9 @@ class Board:
                 return place
 
         return None, None
-    
+
     def get_placed_values(self):
-        """ Devolve a lista de valores que foram colocados no tabuleiro """
+        """ Devolve a lista de valores colocados no tabuleiro """
         return self.placed_values
 
     def get_possible_values(self) -> set:
@@ -161,7 +159,7 @@ class Board:
         no tabuleiro """
         all_values = set(range(1, self.N ** 2 + 1))
         return all_values.difference(self.board.values())
-    
+
     def adjacent_vertical_numbers(self, row: int, col: int):
         """ Devolve os valores imediatamente abaixo e acima,
         respectivamente. """
@@ -181,7 +179,7 @@ class Board:
 
     def get_free_adjacent_positions(self, row, col):
         ret = []
-        if row + 1 < self.N  and self.get_number(row + 1, col) == 0:
+        if row + 1 < self.N and self.get_number(row + 1, col) == 0:
             ret += [(row + 1, col)]
         if row > 0 and self.get_number(row - 1, col) == 0:
             ret += [(row - 1, col)]
@@ -190,7 +188,7 @@ class Board:
         if col > 0 and self.get_number(row, col - 1) == 0:
             ret += [(row, col - 1)]
         return ret
-    
+
     def get_copy(self):
         """ Devolve uma cópia da Board. """
         copy_board = {}
@@ -234,11 +232,10 @@ class Board:
         return self.__repr__()
 
 
-
 class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
-        self.initial = NumbrixState(board)
+        super().__init__(NumbrixState(board))
 
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
@@ -261,7 +258,7 @@ class Numbrix(Problem):
                     return [(free_positions[0][0], free_positions[0][1], value - 1)]
                 else:
                     return []
-                
+
             for position in free_positions:
                 r, c = position
                 adjacents = state.board.get_all_adjacents(r, c)
@@ -279,7 +276,7 @@ class Numbrix(Problem):
             row, col = place
             value = state.board.get_number(row, col)
             free_positions = state.board.get_free_adjacent_positions(row, col)
-                
+
             for position in free_positions:
                 if value + 1 <= state.board.N ** 2 and value + 1 in possible_values:
                     ret += [(position[0], position[1], value + 1)]
@@ -288,7 +285,6 @@ class Numbrix(Problem):
             if len(ret) > 0:
                 return ret
         return ret
-
 
     def result(self, state: NumbrixState, action):
         """ Retorna o estado resultante de executar a 'action' sobre
@@ -328,7 +324,7 @@ class Numbrix(Problem):
                 col += 1
             else:
                 return False
-        
+
         return True
 
     def h(self, node: Node):
@@ -341,13 +337,10 @@ class Numbrix(Problem):
             # best option
             if adjacents.count(0) == 0:
                 if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
-
                     return -math.inf
                 if action[2] == 1 and action[2] + 1 in adjacents:
-
                     return -math.inf
                 if action[2] == state.board.N ** 2 in adjacents:
-
                     return -math.inf
             if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
                 r_s, c_s = state.board.find_number(action[2] + 1)
@@ -356,7 +349,6 @@ class Numbrix(Problem):
                 free_a = state.board.get_free_adjacent_positions(r_a, c_a)
                 free = set(free_s).intersection(free_a)
                 if len(free) > 0:
-
                     return self.initial.board.N ** 2 - len(state.board.get_placed_values())
 
                 return -math.inf
@@ -364,8 +356,7 @@ class Numbrix(Problem):
             possible_values = state.board.get_possible_values()
 
             if (adjacents.count(0) == 0
-                and (action[2] + 1 in possible_values or action[2] - 1 in possible_values)):
-
+                    and (action[2] + 1 in possible_values or action[2] - 1 in possible_values)):
                 return math.inf
 
             for val in adjacents:
@@ -374,32 +365,26 @@ class Numbrix(Problem):
                     val_adjacents = state.board.get_all_adjacents(row, col)
                     if (val_adjacents.count(0) == 0
                             and (val + 1 in possible_values or val - 1 in possible_values)):
-
                         return math.inf
                     if (val_adjacents.count(0) == 1
                             and val + 1 in possible_values and val - 1 in possible_values):
-
                         return math.inf
 
             if state.has_unreachable_places():
-
                 return math.inf
 
             placed_values = state.board.get_placed_values()
 
             for i in range(len(placed_values) - 1):
                 if not state.exists_valid_path_between(placed_values[i], placed_values[i + 1]):
-
                     return math.inf
             if 1 not in placed_values and not state.exists_valid_path_between(1, placed_values[0]):
-
                 return math.inf
-            if state.board.N ** 2 not in placed_values and not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
-
+            if state.board.N ** 2 not in placed_values and not state.exists_valid_path_between(placed_values[-1],
+                                                                                               state.board.N ** 2):
                 return math.inf
 
         return self.initial.board.N ** 2 - len(state.board.get_placed_values())
-    
 
 
 if __name__ == "__main__":
