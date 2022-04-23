@@ -6,11 +6,8 @@
 # 95533 André Martins Esgalhado
 # 95574 Filipe Ligeiro Silva
 
-from __future__ import annotations
-
 import sys
 
-from sympy import re
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, \
     recursive_best_first_search
 import math
@@ -134,7 +131,7 @@ class Board:
         for place in board:
             bisect.insort(self.placed_values, board[place])
     
-    def get_number(self, row: int, col: int) -> int:
+    def get_number(self, row: int, col: int):
         """ Devolve o valor na respetiva posição do tabuleiro. """
         if row >= self.N or row < 0 or col >= self.N or col < 0:
             return None
@@ -147,7 +144,7 @@ class Board:
         self.board[(row,col)] = value
         bisect.insort(self.placed_values, value) 
 
-    def find_number(self, value: int) -> tuple[int, int] | tuple[None, None]:
+    def find_number(self, value: int):
         """ Devolve a localização do valor no tabuleiro. """
         for place in self.board:
             if self.board[place] == value:
@@ -165,12 +162,12 @@ class Board:
         all_values = set(range(1, self.N ** 2 + 1))
         return all_values.difference(self.board.values())
     
-    def adjacent_vertical_numbers(self, row: int, col: int) -> tuple[int | None, int | None]:
+    def adjacent_vertical_numbers(self, row: int, col: int):
         """ Devolve os valores imediatamente abaixo e acima,
         respectivamente. """
         return self.get_number(row + 1, col), self.get_number(row - 1, col)
 
-    def adjacent_horizontal_numbers(self, row: int, col: int) -> tuple[int | None, int | None]:
+    def adjacent_horizontal_numbers(self, row: int, col: int):
         """ Devolve os valores imediatamente à esquerda e à direita,
         respectivamente. """
         return self.get_number(row, col - 1), self.get_number(row, col + 1)
