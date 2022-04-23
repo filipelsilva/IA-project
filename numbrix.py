@@ -21,6 +21,7 @@ from search import Problem, Node, astar_search, breadth_first_tree_search, depth
 from utils import unique
 from itertools import chain, combinations  # TODO podemos importar isto? (é usado no utils)
 import math
+import bisect 
 
 class NumbrixState:
     state_id = 0
@@ -34,6 +35,44 @@ class NumbrixState:
         if len(self.board.board) != len(other.board.board):
             return len(self.board.board) > len(other.board.board)
         return self.id < other.id
+    
+    def recursive_path_counter(self, path, len, obj_len, obj, found):
+        """ Devolve o comprimento da sequência de números seguidos que contem um 
+        dado valor numa dada posicao """
+        row, col = path[-1]
+        adjacents = self.board.get_all_adjacents(row, col)
+
+        if len == obj_len and (obj in adjacents or obj == 1 or obj == self.board.N ** 2):
+            found = True
+            return found 
+
+        #abaixo
+        if adjacents[0] == 0 and (row + 1, col) not in path and not found:
+            found = self.recursive_path_counter(path + [(row + 1, col)], len + 1, obj_len, obj, found)
+            
+        #acima
+        if adjacents[1] == 0 and (row - 1, col) not in path and not found:
+            found = self.recursive_path_counter(path + [(row - 1, col)], len + 1, obj_len, obj, found)
+        
+        #esquerda
+        if adjacents[2] == 0 and (row, col - 1) not in path and not found:
+            found = self.recursive_path_counter(path + [(row, col - 1)], len + 1, obj_len, obj, found)
+        
+        #direita
+        if adjacents[3] == 0 and (row, col + 1) not in path and not found:
+            found = self.recursive_path_counter(path + [(row, col + 1)], len + 1, obj_len, obj, found)
+
+        return found
+    
+    def exists_valid_path_between(self, val1, val2):
+        obj_len = val2 - val1 - 1
+        row, col = self.board.find_number(val1)
+        if (row, col) == (None, None):
+            row, col = self.board.find_number(val2)
+            val2 = val1
+        if self.recursive_path_counter([(row, col)], 0, obj_len, val2, False):
+            return True
+        return False
         
     # TODO: outros metodos da classe
 
@@ -44,6 +83,9 @@ class Board:
     def __init__(self, N: int, board: dict):
         self.N = N
         self.board = board
+        self.placed_values = []
+        for place in board:
+            bisect.insort(self.placed_values, board[place])
     
     def get_number(self, row: int, col: int) -> int:
         """ Devolve o valor na respetiva posição do tabuleiro. """
@@ -56,6 +98,7 @@ class Board:
     def set_number(self, row: int, col: int, value: int):
         """ Coloca o valor na respetiva posição do tabuleiro. """
         self.board[(row,col)] = value
+        bisect.insort(self.placed_values, value) 
 
     def find_number(self, value: int) -> tuple[int, int] | tuple[None, None]:
         """ Devolve a localização do valor no tabuleiro. """
@@ -65,9 +108,9 @@ class Board:
 
         return None, None
     
-    def get_placed_values(self) -> set:
+    def get_placed_values(self):
         """ Devolve a lista de valores que foram colocados no tabuleiro """
-        return self.board.values()
+        return self.placed_values
 
     def get_possible_values(self) -> set:
         """ Devolve a lista de valores que não foram ainda colocados
@@ -241,17 +284,35 @@ class Numbrix(Problem):
         """ Função heuristica utilizada para a procura A*. """
         action = node.action
         state = node.state
+
         if action is not None:
+            placed_values = state.board.get_placed_values()
+
+            for i in range(len(placed_values) - 1):
+                if not state.exists_valid_path_between(placed_values[i], placed_values[i + 1]):
+
+                    return math.inf
+            if 1 not in placed_values and not state.exists_valid_path_between(1, placed_values[0]):
+
+                return math.inf
+            if state.board.N ** 2 not in placed_values and not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
+
+                return math.inf
+
             action_adjacents = state.board.get_all_adjacents(action[0], action[1])
             # best option
             if action[2] != 1 and action[2] + 1 in action_adjacents and action[2] - 1 in action_adjacents:
+
                 return -math.inf
             if action_adjacents.count(0) == 0:
                 if action[2] == 1 and action[2] + 1 in action_adjacents:
+
                     return -math.inf
                 if action[2] == state.board.N ** 2 in action_adjacents:
+
                     return -math.inf
-        return math.inf
+
+        return 1
     
     # TODO: outros metodos da classe
 
