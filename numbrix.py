@@ -42,9 +42,10 @@ class NumbrixState:
         row, col = path[-1]
         adjacents = self.board.get_all_adjacents(row, col)
 
-        if len == obj_len and (obj in adjacents or obj == 1 or obj == self.board.N ** 2):
-            found = True
-            return found 
+        if len == obj_len:
+            if obj in adjacents or obj == 1 or obj == self.board.N ** 2:
+                return True
+            return False
 
         #abaixo
         if adjacents[0] == 0 and (row + 1, col) not in path and not found:
@@ -289,7 +290,6 @@ class Numbrix(Problem):
                     ret += [(position[0], position[1], value - 1)]
             if len(ret) > 0:
                 return ret
-
         return ret
 
 
@@ -309,7 +309,7 @@ class Numbrix(Problem):
         um estado objetivo. Deve verificar se todas as posições do tabuleiro 
         estão preenchidas com uma sequência de números adjacentes. """
         self.N += 1
-        print(state.board)
+        #print(state.board)
         if len(state.board.board) != state.board.N ** 2:
             return False
 
@@ -392,6 +392,7 @@ class Numbrix(Problem):
 
             placed_values = state.board.get_placed_values()
 
+            #TODO guardar o caminho entre dois numeros e verificar se este foi posto numa dessas posices e recalcular apenas se for o caso
             for i in range(len(placed_values) - 1):
                 if not state.exists_valid_path_between(placed_values[i], placed_values[i + 1]):
 
