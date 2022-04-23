@@ -271,6 +271,8 @@ class Numbrix(Problem):
                     if v is not None and v != 0 and v != value:
                         if abs(v - value) == 2:
                             if max(v, value) - 1 in possible_values:
+                                if adjacents.count(0) == 0:
+                                    return [(r, c, max(v, value) - 1)]
                                 ret += [(r, c, max(v, value) - 1)]
             if len(ret) > 0:
                 return ret
@@ -340,36 +342,70 @@ class Numbrix(Problem):
         state = node.state
 
         if action is not None:
-            action_adjacents = state.board.get_all_adjacents(action[0], action[1])
+            adjacents = state.board.get_all_adjacents(action[0], action[1])
             # best option
-            if action[2] != 1 and action[2] + 1 in action_adjacents and action[2] - 1 in action_adjacents:
+            if adjacents.count(0) == 0:
+                if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
+
+                    return -math.inf
+                if action[2] == 1 and action[2] + 1 in adjacents:
+
+                    return -math.inf
+                if action[2] == state.board.N ** 2 in adjacents:
+
+                    return -math.inf
+            if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
+                r_s, c_s = state.board.find_number(action[2] + 1)
+                free_s = state.board.get_free_adjacent_positions(r_s, c_s)
+                r_a, c_a = state.board.find_number(action[2] - 1)
+                free_a = state.board.get_free_adjacent_positions(r_a, c_a)
+                free = set(free_s).intersection(free_a)
+                if len(free) > 0:
+
+                    return self.initial.board.N ** 2 - len(state.board.get_placed_values())
 
                 return -math.inf
-            if action_adjacents.count(0) == 0:
-                if action[2] == 1 and action[2] + 1 in action_adjacents:
 
-                    return -math.inf
-                if action[2] == state.board.N ** 2 in action_adjacents:
+            possible_values = state.board.get_possible_values()
 
-                    return -math.inf
+            if (adjacents.count(0) == 0
+                and (action[2] + 1 in possible_values or action[2] - 1 in possible_values)):
 
-            placed_values = state.board.get_placed_values()
+                return math.inf
+
+            for val in adjacents:
+                if val is not None and val != 0:
+                    row, col = state.board.find_number(val)
+                    val_adjacents = state.board.get_all_adjacents(row, col)
+                    if (val_adjacents.count(0) == 0
+                            and (val + 1 in possible_values or val - 1 in possible_values)):
+
+                        return math.inf
+                    if (val_adjacents.count(0) == 1
+                            and val + 1 in possible_values and val - 1 in possible_values):
+
+                        return math.inf
 
             if state.has_unreachable_places():
+
                 return math.inf
+
+            placed_values = state.board.get_placed_values()
 
             for i in range(len(placed_values) - 1):
                 if not state.exists_valid_path_between(placed_values[i], placed_values[i + 1]):
 
                     return math.inf
+            #faster without these
             if 1 not in placed_values and not state.exists_valid_path_between(1, placed_values[0]):
 
                 return math.inf
             if state.board.N ** 2 not in placed_values and not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
 
                 return math.inf
+            ####
 
-        return 1
+        return self.initial.board.N ** 2 - len(state.board.get_placed_values())
     
     # TODO: outros metodos da classe
 
