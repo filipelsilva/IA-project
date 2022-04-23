@@ -6,20 +6,13 @@
 # 95533 André Martins Esgalhado
 # 95574 Filipe Ligeiro Silva
 
-# FIXME isto pode falhar no mooshak, depois teremos que testar, devido às type
-# annotations. Caso falhe, podemos apenas voltar a colocar como estava, o
-# código corre na mesma
 from __future__ import annotations
 
 import sys
-from unittest import result
 
-from more_itertools import adjacent
 from sympy import re
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, \
     recursive_best_first_search
-from utils import unique
-from itertools import chain, combinations  # TODO podemos importar isto? (é usado no utils)
 import math
 import bisect 
 
@@ -129,7 +122,6 @@ class NumbrixState:
                         return True
         return False
         
-    # TODO: outros metodos da classe
 
 
 class Board:
@@ -243,7 +235,6 @@ class Board:
         compatibilidade com os exemplos do enunciado. """
         return self.__repr__()
 
-    # TODO: outros metodos da classe
 
 
 class Numbrix(Problem):
@@ -398,27 +389,22 @@ class Numbrix(Problem):
 
             placed_values = state.board.get_placed_values()
 
-            #TODO guardar o caminho entre dois numeros e verificar se este foi posto numa dessas posices e recalcular apenas se for o caso
             for i in range(len(placed_values) - 1):
                 if not state.exists_valid_path_between(placed_values[i], placed_values[i + 1]):
 
                     return math.inf
-            #faster without these
             if 1 not in placed_values and not state.exists_valid_path_between(1, placed_values[0]):
 
                 return math.inf
             if state.board.N ** 2 not in placed_values and not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
 
                 return math.inf
-            ####
 
         return self.initial.board.N ** 2 - len(state.board.get_placed_values())
     
-    # TODO: outros metodos da classe
 
 
 if __name__ == "__main__":
-    # TODO:
     # Ler o ficheiro de input de sys.argv[1],
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
@@ -429,10 +415,6 @@ if __name__ == "__main__":
     #     sys.exit(1)
 
     board = Board.parse_instance(sys.argv[1])
-
-    # i1.txt do enunciado
-    # board = Board(3, [[0,0,0],[0,0,2],[0,6,0]])
-    # board = Board(3, [[9,4,3],[8,5,2],[7,6,1]])
 
     problem = Numbrix(board)
     goal_node = greedy_search(problem)
