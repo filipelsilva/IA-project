@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -euo pipefail
+
+trap ctrl_c INT
+
+ctrl_c() {
+	echo "Aborted."
+	cleanup
+	exit
+}
+
+one() {
+	echo "tests/input$1.txt"
+
+	if [ "$#" -eq 1 ]; then
+		time python numbrix.py tests/input"$1".txt > tmp
+	else
+		case "$2" in
+			"timer")
+				time python numbrix.py tests/input"$1".txt > /dev/null
+				;;
+
+			"output") 
+				python numbrix.py tests/input"$1".txt > tmp
+				;;
+		esac
+	fi
+
+	if [ -f tmp ]; then
+		cat tmp
+		rm -f tmp
+	fi
+
+	echo ""
+}
+
+timer() {
+	for i in {0..10}; do
+		one "$i" "${FUNCNAME[0]}"
+	done
+}
+
+output() {
+	for i in {0..10}; do
+		one "$i" "${FUNCNAME[0]}"
+	done
+}
+
+full() {
+	for i in {0..10}; do
+		one "$i"
+	done
+}
+
+"$@"

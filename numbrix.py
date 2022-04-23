@@ -233,6 +233,7 @@ class Board:
             for col in range(self.N):
                 if (row, col) in self.board:
                     ret += str(self.board[(row, col)])
+
                 else:
                     ret += '0'
 
