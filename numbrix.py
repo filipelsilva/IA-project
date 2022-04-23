@@ -73,6 +73,60 @@ class NumbrixState:
         if self.recursive_path_counter([(row, col)], 0, obj_len, val2, False):
             return True
         return False
+
+    def val_in_place(self, val, adjacents):
+        if val == 1 and val + 1 in adjacents:
+            return True
+        elif val == self.board.N ** 2 and val - 1 in adjacents:
+            return True
+        elif val + 1 in adjacents and val - 1 in adjacents:
+            return True
+        return False
+    
+    def recursive_unreachable_path(self, explored, row, col):
+        adjacents = self.board.get_all_adjacents(row, col)
+        for val in adjacents:
+            if val is not None and val != 0:
+                r, c = self.board.find_number(val)
+                val_adjacents = self.board.get_all_adjacents(r, c)
+                if not self.val_in_place(val, val_adjacents):
+                    return False
+    
+        #abaixo
+        if adjacents[0] == 0 and (row + 1, col) not in explored:
+            explored += [(row + 1, col)]
+            return self.recursive_unreachable_path(explored, row + 1, col)
+            
+        #acima
+        if adjacents[1] == 0 and (row - 1, col) not in explored:
+            explored += [(row - 1, col)]
+            return self.recursive_unreachable_path(explored, row - 1, col)
+        
+        #esquerda
+        if adjacents[2] == 0 and (row, col - 1) not in explored:
+            explored += [(row, col - 1)]
+            return self.recursive_unreachable_path(explored, row, col - 1)
+        
+        #direita
+        if adjacents[3] == 0 and (row, col + 1) not in explored:
+            explored += [(row, col + 1)]
+            return self.recursive_unreachable_path(explored, row, col + 1)
+
+        return True
+
+            
+    def has_unreachable_places(self):
+        # há espacos que nunca vao ser preenchidos
+        for row in range(self.board.N):
+            for col in range(self.board.N):
+                val = self.board.get_number(row, col)
+                adjacents = self.board.get_all_adjacents(row, col)
+                explored = []
+                if val == 0 and (row, col) not in explored and adjacents.count(0) == 1:
+                    explored += [(row, col)]
+                    if self.recursive_unreachable_path(explored, row, col):
+                        return True
+        return False
         
     # TODO: outros metodos da classe
 
@@ -286,19 +340,6 @@ class Numbrix(Problem):
         state = node.state
 
         if action is not None:
-            placed_values = state.board.get_placed_values()
-
-            for i in range(len(placed_values) - 1):
-                if not state.exists_valid_path_between(placed_values[i], placed_values[i + 1]):
-
-                    return math.inf
-            if 1 not in placed_values and not state.exists_valid_path_between(1, placed_values[0]):
-
-                return math.inf
-            if state.board.N ** 2 not in placed_values and not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
-
-                return math.inf
-
             action_adjacents = state.board.get_all_adjacents(action[0], action[1])
             # best option
             if action[2] != 1 and action[2] + 1 in action_adjacents and action[2] - 1 in action_adjacents:
@@ -311,6 +352,22 @@ class Numbrix(Problem):
                 if action[2] == state.board.N ** 2 in action_adjacents:
 
                     return -math.inf
+
+            placed_values = state.board.get_placed_values()
+
+            if state.has_unreachable_places():
+                return math.inf
+
+            for i in range(len(placed_values) - 1):
+                if not state.exists_valid_path_between(placed_values[i], placed_values[i + 1]):
+
+                    return math.inf
+            if 1 not in placed_values and not state.exists_valid_path_between(1, placed_values[0]):
+
+                return math.inf
+            if state.board.N ** 2 not in placed_values and not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
+
+                return math.inf
 
         return 1
     
