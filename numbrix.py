@@ -250,7 +250,6 @@ class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
         self.initial = NumbrixState(board)
-        self.N = 0
 
     def actions(self, state: NumbrixState):
         """ Retorna uma lista de ações que podem ser executadas a
@@ -264,6 +263,15 @@ class Numbrix(Problem):
             row, col = place
             value = state.board.get_number(row, col)
             free_positions = state.board.get_free_adjacent_positions(row, col)
+            adjacents = state.board.get_all_adjacents(row, col)
+
+            if len(free_positions) == 1 and not state.val_in_place(value, adjacents):
+                if value + 1 in possible_values:
+                    return [(free_positions[0][0], free_positions[0][1], value + 1)]
+                if value - 1 in possible_values:
+                    return [(free_positions[0][0], free_positions[0][1], value - 1)]
+                else:
+                    return []
                 
             for position in free_positions:
                 r, c = position
@@ -308,8 +316,6 @@ class Numbrix(Problem):
         """ Retorna True se e só se o estado passado como argumento é
         um estado objetivo. Deve verificar se todas as posições do tabuleiro 
         estão preenchidas com uma sequência de números adjacentes. """
-        self.N += 1
-        #print(state.board)
         if len(state.board.board) != state.board.N ** 2:
             return False
 
@@ -430,6 +436,4 @@ if __name__ == "__main__":
 
     problem = Numbrix(board)
     goal_node = greedy_search(problem)
-    print("Is goal?", problem.goal_test(goal_node.state))
-    print("Solution:\n", goal_node.state.board.to_string(), sep="")
-    print(problem.N)
+    print(goal_node.state.board.to_string(), end="")
