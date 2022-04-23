@@ -373,7 +373,7 @@ class Numbrix(Problem):
                 if action[2] == 1 and action[2] + 1 in adjacents:
                     return -math.inf
 
-                if action[2] == state.board.N ** 2 in adjacents:
+                if action[2] == state.board.N ** 2 and action[2] - 1 in adjacents:
                     return -math.inf
 
             if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
