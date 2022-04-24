@@ -118,13 +118,20 @@ class NumbrixState:
             for col in range(self.board.N):
                 val = self.board.get_number(row, col)
                 adjacents = self.board.get_all_adjacents(row, col)
-                explored = []
 
-                if val == 0 and (row, col) not in explored and adjacents.count(0) == 1:
-                    explored += [(row, col)]
-
-                    if self.recursive_unreachable_path(explored, row, col):
-                        return True
+                if val == 0:
+                    if adjacents.count(0) == 1:
+                        if self.recursive_unreachable_path([(row, col)], row, col):
+                            return True
+                    if adjacents.count(0) == 0:
+                        possible_values = self.board.get_possible_values()
+                        possible = False
+                        for v in adjacents:
+                            if v is not None and (v + 1 in possible_values or v - 1 in possible_values):
+                                possible = True
+                                break
+                        if possible == False:
+                            return True                
 
         return False
 
@@ -432,10 +439,6 @@ if __name__ == "__main__":
     # Usar uma técnica de procura para resolver a instância,
     # Retirar a solução a partir do nó resultante,
     # Imprimir para o standard output no formato indicado.
-
-    if len(sys.argv) != 2:
-        print("Usage: python3 numbrix.py <instance_file>")
-        sys.exit(1)
 
     board = Board.parse_instance(sys.argv[1])
 
