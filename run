@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -uo pipefail
 
 trap ctrl_c INT
 
@@ -11,25 +11,30 @@ ctrl_c() {
 }
 
 one() {
-	echo "tests/input$1.txt"
+	input="tests/input$1.txt"
+	output="tests/input$1.txt"
+	run="python numbrix.py $input"
 
-	if [ "$#" -eq 1 ]; then
-		time python numbrix.py tests/input"$1".txt > tmp
-	else
-		case "$2" in
-			"timer")
-				time python numbrix.py tests/input"$1".txt > /dev/null
-				;;
+	echo "$input"
 
-			"output") 
-				python numbrix.py tests/input"$1".txt > tmp
-				;;
-		esac
-	fi
+	case "$2" in
+		"timer")
+			time $run > /dev/null
+			;;
+
+		"output")
+			$run > tmp
+			;;
+
+		"full")
+			time $run > tmp
+			;;
+	esac
 
 	if [ -f tmp ]; then
 		cat tmp
-		rm tmp
+		diff tmp "$output"
+		rm -f tmp
 	fi
 
 	echo ""
@@ -49,9 +54,8 @@ output() {
 
 full() {
 	for i in {0..10}; do
-		one "$i"
+		one "$i" "${FUNCNAME[0]}"
 	done
 }
 
 "$@"
-rm -f tmp
