@@ -34,6 +34,39 @@ class NumbrixState:
 
         return self.id < other.id
 
+    def impossible_free_area(self, free_area) -> bool:
+        frontier = self.board.get_frontier(free_area)
+        max_len = len(free_area)
+
+        for val in frontier:
+            r, c = self.board.find_number(val)
+            adjacents = self.board.get_all_adjacents(r, c)
+            if self.val_in_place(val, adjacents):
+                del frontier[frontier.index(val)]
+                continue
+            for other in frontier:
+                if val == other:
+                    continue
+                r, c = self.board.find_number(other)
+                adjacents = self.board.get_all_adjacents(r, c)
+                if self.val_in_place(other, adjacents):
+                    del frontier[frontier.index(other)]
+                    continue
+                if max_len < abs(val - other) - 1:
+                    del frontier[frontier.index(val)]
+                    del frontier[frontier.index(other)]
+                    break
+        if len(frontier) != 0:
+            return False
+        return True
+
+    def has_impossible_free_areas(self):
+        for area in self.board.get_free_areas():
+            if self.impossible_free_area(area):
+                return True
+        return False
+            
+
     def recursive_path_counter(self, path, length, obj_len, obj, found) -> bool:
         """ Função auxiliar para verificar se existe caminho válido entre dois valores da Board. """
         row, col = path[-1]
@@ -276,10 +309,12 @@ class Board:
         for row in range(self.N):
             for col in range(self.N):
                 val = self.get_number(row, col)
+                to_explore = []
                 if val == 0 and (row, col) not in explored:
-                    explored += [(row, col)]
-                    ret += [self.recursive_free_area_counter(explored, row, col)]
-        
+                    to_explore = [(row, col)]
+                    ret += [self.recursive_free_area_counter(to_explore, row, col)]
+                    explored += to_explore
+
         return ret
 
     def get_frontier(self, free_area) -> list:
@@ -492,6 +527,9 @@ class Numbrix(Problem):
                         return math.inf
 
             if state.has_unreachable_places():
+                return math.inf
+
+            if state.has_impossible_free_areas():
                 return math.inf
 
             placed_values = state.board.get_placed_values()
