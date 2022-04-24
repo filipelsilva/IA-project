@@ -8,6 +8,8 @@
 
 import sys
 
+from numpy import place
+
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, \
     recursive_best_first_search
 import math
@@ -23,6 +25,10 @@ class NumbrixState:
         NumbrixState.state_id += 1
 
     def __lt__(self, other) -> bool:
+        s_areas = self.board.get_free_areas()
+        o_areas = other.board.get_free_areas()
+        if s_areas != o_areas:
+            return s_areas < o_areas
         if len(self.board.board) != len(other.board.board):
             return len(self.board.board) > len(other.board.board)
 
@@ -67,6 +73,11 @@ class NumbrixState:
             val2 = val1
 
         return self.recursive_path_counter([(row, col)], 0, obj_len, val2, False)
+    
+    def exists_valid_path_between_pos_and_val(self, row, col, val, obj_len) -> bool:
+        """ Verifica se existe caminho válido entre uma posicao e um valore da Board. """
+
+        return self.recursive_path_counter([(row, col)], 1, obj_len, val, False)
 
     def val_in_place(self, val, adjacents) -> bool:
         """ Verifica se o valor está colocado no sítio correto. """
@@ -114,13 +125,34 @@ class NumbrixState:
 
     def has_unreachable_places(self) -> bool:
         """ Verifica se existem espacos que nunca irão ser preenchidos """
+        placed_values = self.board.get_placed_values()
         for row in range(self.board.N):
             for col in range(self.board.N):
                 val = self.board.get_number(row, col)
-                adjacents = self.board.get_all_adjacents(row, col)
 
                 if val == 0:
+                    adjacents = self.board.get_all_adjacents(row, col)
                     if adjacents.count(0) == 1:
+                        """ isto piora idk why
+                        all_in_place = True
+                        for v in adjacents:
+                            if v is not None and v != 0:
+                                r, c = self.board.find_number(v)
+                                if not self.val_in_place(v, self.board.get_all_adjacents(r, c)):
+                                    all_in_place = False
+                        if all_in_place:
+                            for v in adjacents:
+                                r, c = self.board.find_number(v)
+                                if v is not None and v != 0:
+                                    if 1 not in placed_values and self.board.N ** 2 in placed_values:
+                                        if not self.exists_valid_path_between_pos_and_val(r, c, min(placed_values), min(placed_values) - 1):
+                                            return True
+                                    elif self.board.N ** 2 not in placed_values and 1 in placed_values:
+                                        if not self.exists_valid_path_between_pos_and_val(r, c, max(placed_values), max(placed_values) - 1):
+                                            return True
+                                    elif 1 in placed_values and self.board.N ** 2 in placed_values:
+                                        return True
+                        """
                         if self.recursive_unreachable_path([(row, col)], row, col):
                             return True
                     if adjacents.count(0) == 0:
@@ -131,10 +163,9 @@ class NumbrixState:
                                 possible = True
                                 break
                         if possible == False:
-                            return True                
+                            return True
 
         return False
-
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
@@ -212,6 +243,51 @@ class Board:
         if col > 0 and self.get_number(row, col - 1) == 0:
             ret += [(row, col - 1)]
 
+        return ret
+    
+    def recursive_free_area_counter(self, explored, row, col):
+        adjacents = self.get_all_adjacents(row, col)
+
+        #abaixo
+        if adjacents[0] == 0 and (row + 1, col) not in explored:
+            explored += [(row + 1, col)]
+            self.recursive_free_area_counter(explored, row + 1, col)
+            
+        #acima
+        if adjacents[1] == 0 and (row - 1, col) not in explored:
+            explored += [(row - 1, col)]
+            self.recursive_free_area_counter(explored, row - 1, col)
+        
+        #esquerda
+        if adjacents[2] == 0 and (row, col - 1) not in explored:
+            explored += [(row, col - 1)]
+            self.recursive_free_area_counter(explored, row, col - 1)
+        
+        #direita
+        if adjacents[3] == 0 and (row, col + 1) not in explored:
+            explored += [(row, col + 1)]
+            self.recursive_free_area_counter(explored, row, col + 1)
+
+        return explored
+    
+    def get_free_areas(self) -> list:
+        ret = []
+        explored = []
+        for row in range(self.N):
+            for col in range(self.N):
+                val = self.get_number(row, col)
+                if val == 0 and (row, col) not in explored:
+                    explored += [(row, col)]
+                    ret += [self.recursive_free_area_counter(explored, row, col)]
+        
+        return ret
+
+    def get_frontier(self, free_area) -> list:
+        ret = []
+        for val in free_area:
+            for v in self.get_all_adjacents(val[0], val[1]):
+                if v is not None and v != 0:
+                    ret += [v]
         return ret
 
     def get_copy(self):
