@@ -557,5 +557,5 @@ if __name__ == "__main__":
     board = Board.parse_instance(sys.argv[1])
 
     problem = Numbrix(board)
-    goal_node = recursive_best_first_search(problem)
+    goal_node = greedy_search(problem)
     print(goal_node.state.board.to_string(), end="")
