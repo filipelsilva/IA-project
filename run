@@ -12,7 +12,7 @@ ctrl_c() {
 
 one() {
 	input="tests/input$1.txt"
-	output="tests/input$1.txt"
+	output="tests/output$1.txt"
 	run="python numbrix.py $input"
 
 	echo "$input"

@@ -39,19 +39,19 @@ class NumbrixState:
 
             return False
 
-        # abaixo
+        # Abaixo
         if adjacents[0] == 0 and (row + 1, col) not in path and not found:
             found = self.recursive_path_counter(path + [(row + 1, col)], length + 1, obj_len, obj, found)
 
-        # acima
+        # Acima
         if adjacents[1] == 0 and (row - 1, col) not in path and not found:
             found = self.recursive_path_counter(path + [(row - 1, col)], length + 1, obj_len, obj, found)
 
-        # esquerda
+        # Esquerda
         if adjacents[2] == 0 and (row, col - 1) not in path and not found:
             found = self.recursive_path_counter(path + [(row, col - 1)], length + 1, obj_len, obj, found)
 
-        # direita
+        # Direita
         if adjacents[3] == 0 and (row, col + 1) not in path and not found:
             found = self.recursive_path_counter(path + [(row, col + 1)], length + 1, obj_len, obj, found)
 
@@ -179,7 +179,7 @@ class Board:
         """ Devolve os valores imediatamente à esquerda e à direita, respectivamente. """
         return self.get_number(row, col - 1), self.get_number(row, col + 1)
 
-    def get_all_adjacents(self, row, col) -> tuple[int | None, int | None]:
+    def get_all_adjacents(self, row, col) -> tuple[int | None, int | None, int | None, int | None]:
         """ Devolve os valores imediatamente abaixo, acima, à esquerda e à direita, respetivamente. """
         adjacents = self.adjacent_vertical_numbers(row, col)
         adjacents += self.adjacent_horizontal_numbers(row, col)
@@ -189,17 +189,21 @@ class Board:
         """ Devolve todas as posições adjacentes que estejam livres. """
         ret = []
 
+        # Abaixo
         if row + 1 < self.N and self.get_number(row + 1, col) == 0:
             ret += [(row + 1, col)]
 
+        # Acima
         if row > 0 and self.get_number(row - 1, col) == 0:
             ret += [(row - 1, col)]
 
-        if col + 1 < self.N and self.get_number(row, col + 1) == 0:
-            ret += [(row, col + 1)]
-
+        # Esquerda
         if col > 0 and self.get_number(row, col - 1) == 0:
             ret += [(row, col - 1)]
+
+        # Direita
+        if col + 1 < self.N and self.get_number(row, col + 1) == 0:
+            ret += [(row, col + 1)]
 
         return ret
 
