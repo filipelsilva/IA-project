@@ -529,9 +529,6 @@ class Numbrix(Problem):
             if state.has_unreachable_places():
                 return math.inf
 
-            if state.has_impossible_free_areas():
-                return math.inf
-
             placed_values = state.board.get_placed_values()
 
             for i in range(len(placed_values) - 1):
@@ -544,6 +541,9 @@ class Numbrix(Problem):
             if state.board.N ** 2 not in placed_values:
                 if not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
                     return math.inf
+                
+            if state.has_impossible_free_areas():
+                return math.inf
 
         return self.initial.board.N ** 2 - len(state.board.get_placed_values())
 
