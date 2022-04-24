@@ -139,7 +139,7 @@ class Board:
         for place in board:
             bisect.insort(self.placed_values, board[place])
 
-    def get_number(self, row: int, col: int) -> int | None:
+    def get_number(self, row: int, col: int) -> int:
         """ Devolve o valor na respetiva posição do tabuleiro. """
         if row >= self.N or row < 0 or col >= self.N or col < 0:
             return None
@@ -154,7 +154,7 @@ class Board:
         self.board[(row, col)] = value
         bisect.insort(self.placed_values, value)
 
-    def find_number(self, value: int) -> tuple[int, int] | tuple[None, None]:
+    def find_number(self, value: int) -> tuple:
         """ Devolve a localização do valor no tabuleiro. """
         for place in self.board:
             if self.board[place] == value:
@@ -171,15 +171,15 @@ class Board:
         all_values = set(range(1, self.N ** 2 + 1))
         return all_values.difference(self.board.values())
 
-    def adjacent_vertical_numbers(self, row: int, col: int) -> tuple[int | None, int | None]:
+    def adjacent_vertical_numbers(self, row: int, col: int) -> tuple:
         """ Devolve os valores imediatamente abaixo e acima, respectivamente. """
         return self.get_number(row + 1, col), self.get_number(row - 1, col)
 
-    def adjacent_horizontal_numbers(self, row: int, col: int) -> tuple[int | None, int | None]:
+    def adjacent_horizontal_numbers(self, row: int, col: int) -> tuple:
         """ Devolve os valores imediatamente à esquerda e à direita, respectivamente. """
         return self.get_number(row, col - 1), self.get_number(row, col + 1)
 
-    def get_all_adjacents(self, row, col) -> tuple[int | None, int | None, int | None, int | None]:
+    def get_all_adjacents(self, row, col) -> tuple:
         """ Devolve os valores imediatamente abaixo, acima, à esquerda e à direita, respetivamente. """
         adjacents = self.adjacent_vertical_numbers(row, col)
         adjacents += self.adjacent_horizontal_numbers(row, col)
@@ -197,13 +197,13 @@ class Board:
         if row > 0 and self.get_number(row - 1, col) == 0:
             ret += [(row - 1, col)]
 
-        # Esquerda
-        if col > 0 and self.get_number(row, col - 1) == 0:
-            ret += [(row, col - 1)]
-
         # Direita
         if col + 1 < self.N and self.get_number(row, col + 1) == 0:
             ret += [(row, col + 1)]
+
+        # Esquerda
+        if col > 0 and self.get_number(row, col - 1) == 0:
+            ret += [(row, col - 1)]
 
         return ret
 
@@ -361,7 +361,7 @@ class Numbrix(Problem):
 
         return True
 
-    def h(self, node: Node) -> float | int:
+    def h(self, node: Node) -> int or float:
         """ Função heurística. """
         action = node.action
         state = node.state
