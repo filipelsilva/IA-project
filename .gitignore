@@ -1,6 +1,8 @@
 # Custom .gitignore
 *.zip
 .idea
+*.docx
+*.xlsx
 
 ### Default
 
