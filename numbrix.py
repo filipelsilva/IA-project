@@ -25,13 +25,17 @@ class NumbrixState:
         NumbrixState.state_id += 1
 
     def __lt__(self, other) -> bool:
+        s_numbers = self.isolated_numbers()
+        o_numbers = other.isolated_numbers()
+        if s_numbers != o_numbers:
+            return s_numbers > o_numbers
         s_areas = self.board.get_free_areas()
         o_areas = other.board.get_free_areas()
         if s_areas != o_areas:
             return s_areas < o_areas
 
         return self.id < other.id
-
+    
     def impossible_free_area(self, free_area) -> bool:
         frontier = self.board.get_frontier(free_area)
         max_len = len(free_area)
@@ -63,7 +67,19 @@ class NumbrixState:
             if self.impossible_free_area(area):
                 return True
         return False
-            
+    
+    def isolated_numbers(self):
+        ret = 0
+        for row in range(self.board.N):
+            for col in range(self.board.N):
+                val = self.board.get_number(row, col)
+                adjacents = self.board.get_all_adjacents(row, col)
+                ret += 1
+                for v in adjacents:
+                    if v is not None and 1 <= v <= self.board.N ** 2:
+                        ret -= 1
+                        break
+        return ret
 
     def recursive_path_counter(self, path, length, obj_len, obj, found) -> bool:
         """ Função auxiliar para verificar se existe caminho válido entre dois valores da Board. """
@@ -307,12 +323,10 @@ class Board:
         for row in range(self.N):
             for col in range(self.N):
                 val = self.get_number(row, col)
-                to_explore = []
                 if val == 0 and (row, col) not in explored:
-                    to_explore = [(row, col)]
-                    ret += [self.recursive_free_area_counter(to_explore, row, col)]
-                    explored += to_explore
-
+                    explored += [(row, col)]
+                    ret += [self.recursive_free_area_counter(explored, row, col)]
+        
         return ret
 
     def get_frontier(self, free_area) -> list:
@@ -373,7 +387,6 @@ class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
         super().__init__(NumbrixState(board))
-        self.N = 0
 
     def actions(self, state: NumbrixState) -> list:
         """ Retorna uma lista de ações que podem ser executadas a partir do estado passado como argumento. """
@@ -443,8 +456,6 @@ class Numbrix(Problem):
     def goal_test(self, state: NumbrixState) -> bool:
         """ Retorna True se e só se o estado passado como argumento é um estado objetivo. Deve verificar se todas as
         posições do tabuleiro estão preenchidas com uma sequência de números adjacentes. """
-        self.N += 1
-        print(state.board)
         if len(state.board.board) != state.board.N ** 2:
             return False
 
@@ -519,9 +530,6 @@ class Numbrix(Problem):
             if state.board.N ** 2 not in placed_values:
                 if not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
                     return math.inf
-                
-            if state.has_impossible_free_areas():
-                return math.inf
             
             # best option
             if adjacents.count(0) == 0:
@@ -560,4 +568,3 @@ if __name__ == "__main__":
     problem = Numbrix(board)
     goal_node = greedy_search(problem)
     print(goal_node.state.board.to_string(), end="")
-    print(problem.N)
