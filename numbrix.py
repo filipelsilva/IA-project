@@ -23,102 +23,94 @@ class NumbrixState:
         NumbrixState.state_id += 1
 
     def __lt__(self, other) -> bool:
-        s_numbers = self.isolated_numbers()
-        o_numbers = other.isolated_numbers()
-        if s_numbers != o_numbers:
-            return s_numbers > o_numbers
-
+        
+        s_size = self.longest_sequence_size()
+        o_size = other.longest_sequence_size()
+        if s_size != o_size:
+            return s_size < o_size
+        s_size = self.largest_free_area()
+        o_size = other.largest_free_area()
+        if s_size != o_size:
+            return s_size < o_size
         return self.id < other.id
     
-    def impossible_free_area(self, free_area) -> bool:
-        frontier = self.board.get_frontier(free_area)
-        max_len = len(free_area)
+    def recursive_free_area_counter(self, explored, row, col):
+        ret = 1
+        adjacents = self.board.get_all_adjacents(row, col)
 
-        for val in frontier:
-            r, c = self.board.find_number(val)
-            adjacents = self.board.get_all_adjacents(r, c)
-            if self.val_in_place(val, adjacents):
-                del frontier[frontier.index(val)]
-                continue
-            for other in frontier:
-                if val == other:
-                    continue
-                r, c = self.board.find_number(other)
-                adjacents = self.board.get_all_adjacents(r, c)
-                if self.val_in_place(other, adjacents):
-                    del frontier[frontier.index(other)]
-                    continue
-                if max_len < abs(val - other) - 1:
-                    del frontier[frontier.index(val)]
-                    del frontier[frontier.index(other)]
-                    break
-        if len(frontier) != 0:
-            return False
-        return True
+        #abaixo
+        if adjacents[0] == 0 and (row + 1, col) not in explored:
+            explored += [(row + 1, col)]
+            ret += self.recursive_free_area_counter(explored, row + 1, col)
+            
+        #acima
+        if adjacents[1] == 0 and (row - 1, col) not in explored:
+            explored += [(row - 1, col)]
+            ret += self.recursive_free_area_counter(explored, row - 1, col)
+        
+        #esquerda
+        if adjacents[2] == 0 and (row, col - 1) not in explored:
+            explored += [(row, col - 1)]
+            ret += self.recursive_free_area_counter(explored, row, col - 1)
+        
+        #direita
+        if adjacents[3] == 0 and (row, col + 1) not in explored:
+            explored += [(row, col + 1)]
+            ret += self.recursive_free_area_counter(explored, row, col + 1)
 
-    def has_impossible_free_areas(self):
-        for area in self.board.get_free_areas():
-            if self.impossible_free_area(area):
-                return True
-        return False
-    
-    def isolated_numbers(self):
-        ret = 0
+        return ret
+
+    def largest_free_area(self) -> int:
+        max = 0
+        explored = []
         for row in range(self.board.N):
             for col in range(self.board.N):
                 val = self.board.get_number(row, col)
-                adjacents = self.board.get_all_adjacents(row, col)
-                ret += 1
-                for v in adjacents:
-                    if v is not None and 1 <= v <= self.board.N ** 2:
-                        ret -= 1
-                        break
-        return ret
+                if val == 0 and (row, col) not in explored:
+                    explored += [(row, col)]
+                    ret = self.recursive_free_area_counter(explored, row, col)
+                    if ret > max:
+                        max = ret
+                if max > self.board.N / 2:
+                    return max
+        return max
 
-    def recursive_path_counter(self, path, length, obj_len, obj, found) -> bool:
-        """ Função auxiliar para verificar se existe caminho válido entre dois valores da Board. """
-        row, col = path[-1]
+    def recursive_sequence_counter(self, explored, row, col, val):
+        """ Devolve o comprimento da sequência de números seguidos que contem um 
+        dado valor numa dada posicao """
+        ret = 1
         adjacents = self.board.get_all_adjacents(row, col)
 
-        if length == obj_len:
-            if obj in adjacents or obj == 1 or obj == self.board.N ** 2:
-                return True
+        # encontra o valor seguinte na cadeia
+        if val + 1 in adjacents and val + 1 not in explored:
+            new_row, new_col = self.board.find_number(val + 1)
+            explored += [val + 1]
+            ret += self.recursive_sequence_counter(explored, new_row, new_col, val + 1)
 
-            return False
+        # encontra o valor anterior na cadeia
+        if val - 1 in adjacents and val - 1 not in explored and val - 1 != 0:
+            new_row, new_col = self.board.find_number(val - 1)
+            explored += [val - 1]
+            ret += self.recursive_sequence_counter(explored, new_row, new_col, val - 1)
 
-        # Abaixo
-        if adjacents[0] == 0 and (row + 1, col) not in path and not found:
-            found = self.recursive_path_counter(path + [(row + 1, col)], length + 1, obj_len, obj, found)
+        return ret
 
-        # Acima
-        if adjacents[1] == 0 and (row - 1, col) not in path and not found:
-            found = self.recursive_path_counter(path + [(row - 1, col)], length + 1, obj_len, obj, found)
-
-        # Esquerda
-        if adjacents[2] == 0 and (row, col - 1) not in path and not found:
-            found = self.recursive_path_counter(path + [(row, col - 1)], length + 1, obj_len, obj, found)
-
-        # Direita
-        if adjacents[3] == 0 and (row, col + 1) not in path and not found:
-            found = self.recursive_path_counter(path + [(row, col + 1)], length + 1, obj_len, obj, found)
-
-        return found
-
-    def exists_valid_path_between(self, val1, val2) -> bool:
-        """ Verifica se existe caminho válido entre dois valores da Board. """
-        obj_len = val2 - val1 - 1
-        row, col = self.board.find_number(val1)
-
-        if (row, col) == (None, None):
-            row, col = self.board.find_number(val2)
-            val2 = val1
-
-        return self.recursive_path_counter([(row, col)], 0, obj_len, val2, False)
-    
-    def exists_valid_path_between_pos_and_val(self, row, col, val, obj_len) -> bool:
-        """ Verifica se existe caminho válido entre uma posicao e um valore da Board. """
-
-        return self.recursive_path_counter([(row, col)], 1, obj_len, val, False)
+    def longest_sequence_size(self) -> int:
+        """ Devolve o comprimento da sequência de números seguidos mais longa 
+        no tabuleiro """
+        max = 0
+        explored = []
+        for row in range(self.board.N):
+            for col in range(self.board.N):
+                val = self.board.get_number(row, col)
+                if val != 0 and val not in explored:
+                    explored += [val]
+                    ret = self.recursive_sequence_counter(explored, row, col, val)
+                    if ret > max:
+                        max = ret
+                if max > self.board.N / 2:
+                    return max
+        return max
 
     def val_in_place(self, val, adjacents) -> bool:
         """ Verifica se o valor está colocado no sítio correto. """
@@ -173,26 +165,6 @@ class NumbrixState:
                 if val == 0:
                     adjacents = self.board.get_all_adjacents(row, col)
                     if adjacents.count(0) == 1:
-                        """ isto piora idk why
-                        all_in_place = True
-                        for v in adjacents:
-                            if v is not None and v != 0:
-                                r, c = self.board.find_number(v)
-                                if not self.val_in_place(v, self.board.get_all_adjacents(r, c)):
-                                    all_in_place = False
-                        if all_in_place:
-                            for v in adjacents:
-                                r, c = self.board.find_number(v)
-                                if v is not None and v != 0:
-                                    if 1 not in placed_values and self.board.N ** 2 in placed_values:
-                                        if not self.exists_valid_path_between_pos_and_val(r, c, min(placed_values), min(placed_values) - 1):
-                                            return True
-                                    elif self.board.N ** 2 not in placed_values and 1 in placed_values:
-                                        if not self.exists_valid_path_between_pos_and_val(r, c, max(placed_values), max(placed_values) - 1):
-                                            return True
-                                    elif 1 in placed_values and self.board.N ** 2 in placed_values:
-                                        return True
-                        """
                         if self.recursive_unreachable_path([(row, col)], row, col):
                             return True
                     if adjacents.count(0) == 0:
@@ -209,13 +181,66 @@ class NumbrixState:
 
 class Board:
     """ Representação interna de um tabuleiro de Numbrix. """
-    def __init__(self, N: int, board: dict):
+    def __init__(self, N: int, board: dict, placed_values: list, paths: dict):
         self.N = N
         self.board = board
-        self.placed_values = []
+        self.placed_values = placed_values
+        self.paths = paths
 
-        for place in board:
-            bisect.insort(self.placed_values, board[place])
+    def get_recursive_path(self, path, length, obj_len, obj) -> list:
+        """ Função auxiliar para verificar se existe caminho válido entre dois valores da Board. """
+        ret = []
+        row, col = path[-1]
+        adjacents = self.get_all_adjacents(row, col)
+
+        if length == obj_len:
+            if obj in adjacents or obj == 1 or obj == self.N ** 2:
+                return path
+
+            return []
+
+        # Abaixo
+        if adjacents[0] == 0 and (row + 1, col) not in path:
+            ret = self.get_recursive_path(path + [(row + 1, col)], length + 1, obj_len, obj)
+        
+        if len(ret) > 0:
+            return ret
+
+        # Acima
+        if adjacents[1] == 0 and (row - 1, col) not in path:
+            ret = self.get_recursive_path(path + [(row - 1, col)], length + 1, obj_len, obj)
+        
+        if len(ret) > 0:
+            return ret
+
+        # Esquerda
+        if adjacents[2] == 0 and (row, col - 1) not in path:
+            ret = self.get_recursive_path(path + [(row, col - 1)], length + 1, obj_len, obj)
+        
+        if len(ret) > 0:
+            return ret
+
+        # Direita
+        if adjacents[3] == 0 and (row, col + 1) not in path:
+            ret = self.get_recursive_path(path + [(row, col + 1)], length + 1, obj_len, obj)
+
+        return ret
+    
+    def get_valid_path_between(self, val1, val2) -> list:
+        obj_len = val2 - val1 - 1
+        row, col = self.find_number(val1)
+        if obj_len == 0:
+            return [(row, col)]
+
+        if (row, col) == (None, None):
+            row, col = self.find_number(val2)
+            val2 = val1
+
+        explored = self.get_recursive_path([(row, col)], 0, obj_len, val2)
+        if explored == [(row, col)]:
+            return []
+
+        return explored
 
     def get_number(self, row: int, col: int) -> int:
         """ Devolve o valor na respetiva posição do tabuleiro. """
@@ -231,6 +256,9 @@ class Board:
         """ Coloca o valor na respetiva posição do tabuleiro. """
         self.board[(row, col)] = value
         bisect.insort(self.placed_values, value)
+        index = self.placed_values.index(value)
+        if index < len(self.placed_values) - 2:
+            self.paths[value] = self.get_valid_path_between(value, self.placed_values[index + 1])
 
     def find_number(self, value: int) -> tuple:
         """ Devolve a localização do valor no tabuleiro. """
@@ -335,8 +363,16 @@ class Board:
         copy_board = dict()
         for place in self.board:
             copy_board[place] = self.board[place]
+        
+        copy_placed = []
+        for placed in self.placed_values:
+            copy_placed += [placed]
 
-        return Board(self.N, copy_board)
+        copy_paths = dict()
+        for path in self.paths:
+            copy_paths[path] = self.paths[path]
+
+        return Board(self.N, copy_board, copy_placed, copy_paths)
 
     @staticmethod
     def parse_instance(filename: str):
@@ -350,8 +386,18 @@ class Board:
                 for col in range(N):
                     if board_tmp[row][col] != 0:
                         board[(row, col)] = board_tmp[row][col]
+        
+        placed_values = []
+        for place in board:
+            bisect.insort(placed_values, board[place])
+        
+        tmp_board = Board(N, board, placed_values, {})
+        
+        paths = dict()
+        for i in range(len(placed_values) - 1):
+            paths[placed_values[i]] = tmp_board.get_valid_path_between(placed_values[i], placed_values[i + 1])
 
-        return Board(N, board)
+        return Board(N, board, placed_values, paths)
 
     def __repr__(self) -> str:
         ret = ""
@@ -431,7 +477,6 @@ class Numbrix(Problem):
 
             if len(ret) > 0:
                 return ret
-
         return ret
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
@@ -440,6 +485,9 @@ class Numbrix(Problem):
         copy_board = state.board.get_copy()
         row, col, value = action
         copy_board.set_number(row, col, value)
+        for i in range(len(copy_board.placed_values) - 2):
+            if copy_board.placed_values[i] in copy_board.paths and (action[0], action[1]) in copy_board.paths[copy_board.placed_values[i]]:
+                copy_board.paths[copy_board.placed_values[i]] = copy_board.get_valid_path_between(copy_board.placed_values[i], copy_board.placed_values[i+1])
 
         return NumbrixState(copy_board)
 
@@ -504,21 +552,15 @@ class Numbrix(Problem):
 
                     if val_adjacents.count(0) == 1 and val + 1 in possible_values and val - 1 in possible_values:
                         return math.inf
+            
+            for path in state.board.paths:
+                if state.board.paths[path] == []:
+                    return math.inf
 
             if state.has_unreachable_places():
                 return math.inf
 
             placed_values = state.board.get_placed_values()
-
-            for i in range(len(placed_values) - 1):
-                if not state.exists_valid_path_between(placed_values[i], placed_values[i + 1]):
-                    return math.inf
-
-            if 1 not in placed_values and not state.exists_valid_path_between(1, placed_values[0]):
-                return math.inf
-
-            if state.board.N ** 2 not in placed_values and not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
-                    return math.inf
             
             # best option
             if adjacents.count(0) == 0:
