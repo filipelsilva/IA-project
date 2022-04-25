@@ -330,20 +330,6 @@ class Numbrix(Problem):
         possible_values = state.board.get_possible_values()
         placed_values = state.board.get_placed_values()
 
-        length = len(placed_values)
-        
-        for i in range(length - 1):
-            val = placed_values[i]
-            next_val = placed_values[i + 1]
-            if next_val - val == 2:
-                r_v, c_v = state.board.find_number(val)
-                r_n, c_n = state.board.find_number(next_val)
-                free_val_adj = state.board.get_free_adjacent_positions(r_v, c_v)
-                free_next_val_adj = state.board.get_free_adjacent_positions(r_n, c_n)
-                free = list(set(free_val_adj).intersection(free_next_val_adj))
-                if len(free) == 1:
-                    return [(free[0][0], free[0][1], next_val - 1)]
-
         for place in board:
             row, col = place
             value = state.board.get_number(row, col)
@@ -359,22 +345,29 @@ class Numbrix(Problem):
 
                 else:
                     return []
+            if len(ret) == 0:
+                for position in free_positions:
+                    if value + 1 <= state.board.N ** 2 and value + 1 in possible_values:
+                        ret += [(position[0], position[1], value + 1)]
 
-        for place in board:
-            row, col = place
-            value = state.board.get_number(row, col)
-            free_positions = state.board.get_free_adjacent_positions(row, col)
+                    if value - 1 > 0 and value - 1 in possible_values:
+                        ret += [(position[0], position[1], value - 1)]
 
-            for position in free_positions:
-                if value + 1 <= state.board.N ** 2 and value + 1 in possible_values:
-                    ret += [(position[0], position[1], value + 1)]
+        length = len(placed_values)
+        
+        for i in range(length - 1):
+            val = placed_values[i]
+            next_val = placed_values[i + 1]
+            if next_val - val == 2:
+                r_v, c_v = state.board.find_number(val)
+                r_n, c_n = state.board.find_number(next_val)
+                free_val_adj = state.board.get_free_adjacent_positions(r_v, c_v)
+                free_next_val_adj = state.board.get_free_adjacent_positions(r_n, c_n)
+                free = list(set(free_val_adj).intersection(free_next_val_adj))
+                if len(free) == 1:
+                    return [(free[0][0], free[0][1], next_val - 1)]
 
-                if value - 1 > 0 and value - 1 in possible_values:
-                    ret += [(position[0], position[1], value - 1)]
-
-            if len(ret) > 0:
-                return unique(ret)
-        return ret
+        return unique(ret)
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
         """ Retorna o estado resultante de executar a 'action' sobre 'state' passado como argumento. A ação a
@@ -383,7 +376,8 @@ class Numbrix(Problem):
         row, col, value = action
         copy_board.set_number(row, col, value)
         length = len(copy_board.placed_values)
-        for i in range(length - 2):
+        index = copy_board.placed_values.index(action[2])
+        for i in range(index, length - 2):
             if copy_board.placed_values[i] in copy_board.paths and (action[0], action[1]) in copy_board.paths[copy_board.placed_values[i]]:
                 copy_board.paths[copy_board.placed_values[i]] = copy_board.get_valid_path_between(copy_board.placed_values[i], copy_board.placed_values[i+1])
 
@@ -437,7 +431,7 @@ class Numbrix(Problem):
                         return math.inf
 
             if [] in state.board.paths.values():
-                    return math.inf
+                return math.inf
             
             if state.has_unreachable_places():
                 return math.inf
