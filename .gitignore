@@ -2,6 +2,7 @@
 *.zip
 .idea
 *.docx
+*.xlsx
 
 ### Default
 
