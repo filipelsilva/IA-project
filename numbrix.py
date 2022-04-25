@@ -10,6 +10,7 @@ import sys
 
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, \
     recursive_best_first_search
+from utils import unique
 import math
 import bisect
 
@@ -23,15 +24,6 @@ class NumbrixState:
         NumbrixState.state_id += 1
 
     def __lt__(self, other) -> bool:
-        
-        s_size = self.longest_sequence_size()
-        o_size = other.longest_sequence_size()
-        if s_size != o_size:
-            return s_size < o_size
-        s_size = self.largest_free_area()
-        o_size = other.largest_free_area()
-        if s_size != o_size:
-            return s_size < o_size
         return self.id < other.id
     
     def recursive_free_area_counter(self, explored, row, col):
@@ -225,49 +217,8 @@ class Board:
             ret = self.get_recursive_path(path + [(row, col + 1)], length + 1, obj_len, obj)
 
         return ret
-    
-    def iterative_path_counter(self, val1, val2) -> bool:
-        """ Verifica se existe caminho válido entre dois valores da Board. """
-        row, col = self.find_number(val1)
-        # print(val1, val2)
-        # print(row, col)
-
-        explored = set()
-        to_explore = set()
-        to_explore.add((row, col))
-
-        while len(to_explore) != 0:
-            # print(to_explore)
-            row, col = to_explore.pop()
-
-            if row != None:
-                explored.add((row, col))
-                adjacents = self.get_all_adjacents(row, col)
-
-                if val2 in adjacents:
-                    return True
-
-                # Abaixo
-                if (row + 1, col) not in explored and adjacents[0] == 0:
-                    to_explore.add((row + 1, col))
-
-                # Acima
-                if (row - 1, col) not in explored and adjacents[1] == 0:
-                    to_explore.add((row - 1, col))
-
-                # Esquerda
-                if (row, col - 1) not in explored and adjacents[2] == 0:
-                    to_explore.add((row, col - 1))
-
-                # Direita
-                if (row, col + 1) not in explored and adjacents[3] == 0:
-                    to_explore.add((row, col + 1))
-
-        return False
 
     def get_valid_path_between(self, val1, val2) -> list:
-        return self.iterative_path_counter(val1, val2)
-
         obj_len = val2 - val1 - 1
         row, col = self.find_number(val1)
         if obj_len == 0:
@@ -467,6 +418,7 @@ class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
         super().__init__(NumbrixState(board))
+        self.N = 0
 
     def actions(self, state: NumbrixState) -> list:
         """ Retorna uma lista de ações que podem ser executadas a partir do estado passado como argumento. """
@@ -475,7 +427,7 @@ class Numbrix(Problem):
         board = dict(sorted(state.board.board.items(), key=lambda item: item[1]))
         possible_values = state.board.get_possible_values()
         placed_values = state.board.get_placed_values()
-
+        
         for i in range(len(placed_values) - 1):
             val = placed_values[i]
             next_val = placed_values[i + 1]
@@ -517,7 +469,7 @@ class Numbrix(Problem):
                     ret += [(position[0], position[1], value - 1)]
 
             if len(ret) > 0:
-                return ret
+                return unique(ret)
         return ret
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
@@ -535,6 +487,7 @@ class Numbrix(Problem):
     def goal_test(self, state: NumbrixState) -> bool:
         """ Retorna True se e só se o estado passado como argumento é um estado objetivo. Deve verificar se todas as
         posições do tabuleiro estão preenchidas com uma sequência de números adjacentes. """
+        self.N += 1
         if len(state.board.board) != state.board.N ** 2:
             return False
 
@@ -594,15 +547,13 @@ class Numbrix(Problem):
                     if val_adjacents.count(0) == 1 and val + 1 in possible_values and val - 1 in possible_values:
                         return math.inf
             
+            if state.has_unreachable_places():
+                return math.inf
+            
             for path in state.board.paths:
                 if state.board.paths[path] == []:
                     return math.inf
 
-            if state.has_unreachable_places():
-                return math.inf
-
-            placed_values = state.board.get_placed_values()
-            
             # best option
             if adjacents.count(0) == 0:
                 if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
@@ -615,15 +566,7 @@ class Numbrix(Problem):
                     return -math.inf
                 
             if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
-                r_s, c_s = state.board.find_number(action[2] + 1)
-                free_s = state.board.get_free_adjacent_positions(r_s, c_s)
-                r_a, c_a = state.board.find_number(action[2] - 1)
-                free_a = state.board.get_free_adjacent_positions(r_a, c_a)
-                free = set(free_s).intersection(free_a)
-
-                if len(free) > 0:
-                    return self.initial.board.N ** 2 - len(placed_values)
-                return -math.inf
+                return 0
         return self.initial.board.N ** 2 - len(state.board.get_placed_values())
 
 
@@ -636,5 +579,6 @@ if __name__ == "__main__":
     board = Board.parse_instance(sys.argv[1])
 
     problem = Numbrix(board)
-    goal_node = recursive_best_first_search(problem)
+    goal_node = greedy_search(problem)
     print(goal_node.state.board.to_string(), end="")
+    print(problem.N)
