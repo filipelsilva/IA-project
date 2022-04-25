@@ -29,8 +29,6 @@ class NumbrixState:
         o_areas = other.board.get_free_areas()
         if s_areas != o_areas:
             return s_areas < o_areas
-        if len(self.board.board) != len(other.board.board):
-            return len(self.board.board) > len(other.board.board)
 
         return self.id < other.id
 
@@ -375,6 +373,7 @@ class Numbrix(Problem):
     def __init__(self, board: Board):
         """ O construtor especifica o estado inicial. """
         super().__init__(NumbrixState(board))
+        self.N = 0
 
     def actions(self, state: NumbrixState) -> list:
         """ Retorna uma lista de ações que podem ser executadas a partir do estado passado como argumento. """
@@ -444,6 +443,8 @@ class Numbrix(Problem):
     def goal_test(self, state: NumbrixState) -> bool:
         """ Retorna True se e só se o estado passado como argumento é um estado objetivo. Deve verificar se todas as
         posições do tabuleiro estão preenchidas com uma sequência de números adjacentes. """
+        self.N += 1
+        print(state.board)
         if len(state.board.board) != state.board.N ** 2:
             return False
 
@@ -487,29 +488,6 @@ class Numbrix(Problem):
         if action is not None:
             adjacents = state.board.get_all_adjacents(action[0], action[1])
 
-            # best option
-            if adjacents.count(0) == 0:
-                if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
-                    return -math.inf
-
-                if action[2] == 1 and action[2] + 1 in adjacents:
-                    return -math.inf
-
-                if action[2] == state.board.N ** 2 and action[2] - 1 in adjacents:
-                    return -math.inf
-
-            if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
-                r_s, c_s = state.board.find_number(action[2] + 1)
-                free_s = state.board.get_free_adjacent_positions(r_s, c_s)
-                r_a, c_a = state.board.find_number(action[2] - 1)
-                free_a = state.board.get_free_adjacent_positions(r_a, c_a)
-                free = set(free_s).intersection(free_a)
-
-                if len(free) > 0:
-                    return self.initial.board.N ** 2 - len(state.board.get_placed_values())
-
-                return -math.inf
-
             possible_values = state.board.get_possible_values()
 
             if adjacents.count(0) == 0 and (action[2] + 1 in possible_values or action[2] - 1 in possible_values):
@@ -544,6 +522,29 @@ class Numbrix(Problem):
                 
             if state.has_impossible_free_areas():
                 return math.inf
+            
+            # best option
+            if adjacents.count(0) == 0:
+                if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
+                    return -math.inf
+
+                if action[2] == 1 and action[2] + 1 in adjacents:
+                    return -math.inf
+
+                if action[2] == state.board.N ** 2 and action[2] - 1 in adjacents:
+                    return -math.inf
+
+            if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
+                r_s, c_s = state.board.find_number(action[2] + 1)
+                free_s = state.board.get_free_adjacent_positions(r_s, c_s)
+                r_a, c_a = state.board.find_number(action[2] - 1)
+                free_a = state.board.get_free_adjacent_positions(r_a, c_a)
+                free = set(free_s).intersection(free_a)
+
+                if len(free) > 0:
+                    return self.initial.board.N ** 2 - len(state.board.get_placed_values())
+
+                return -math.inf
 
         return self.initial.board.N ** 2 - len(state.board.get_placed_values())
 
@@ -559,3 +560,4 @@ if __name__ == "__main__":
     problem = Numbrix(board)
     goal_node = greedy_search(problem)
     print(goal_node.state.board.to_string(), end="")
+    print(problem.N)
