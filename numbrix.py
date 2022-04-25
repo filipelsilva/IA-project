@@ -8,8 +8,6 @@
 
 import sys
 
-from numpy import place
-
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, \
     recursive_best_first_search
 import math
@@ -29,10 +27,6 @@ class NumbrixState:
         o_numbers = other.isolated_numbers()
         if s_numbers != o_numbers:
             return s_numbers > o_numbers
-        s_areas = self.board.get_free_areas()
-        o_areas = other.board.get_free_areas()
-        if s_areas != o_areas:
-            return s_areas < o_areas
 
         return self.id < other.id
     
@@ -172,7 +166,6 @@ class NumbrixState:
 
     def has_unreachable_places(self) -> bool:
         """ Verifica se existem espacos que nunca irão ser preenchidos """
-        placed_values = self.board.get_placed_values()
         for row in range(self.board.N):
             for col in range(self.board.N):
                 val = self.board.get_number(row, col)
@@ -394,6 +387,19 @@ class Numbrix(Problem):
 
         board = dict(sorted(state.board.board.items(), key=lambda item: item[1]))
         possible_values = state.board.get_possible_values()
+        placed_values = state.board.get_placed_values()
+
+        for i in range(len(placed_values) - 1):
+            val = placed_values[i]
+            next_val = placed_values[i + 1]
+            if next_val - val == 2:
+                r_v, c_v = state.board.find_number(val)
+                r_n, c_n = state.board.find_number(next_val)
+                free_val_adj = state.board.get_free_adjacent_positions(r_v, c_v)
+                free_next_val_adj = state.board.get_free_adjacent_positions(r_n, c_n)
+                free = list(set(free_val_adj).intersection(free_next_val_adj))
+                if len(free) == 1:
+                    return [(free[0][0], free[0][1], next_val - 1)]
 
         for place in board:
             row, col = place
@@ -511,8 +517,7 @@ class Numbrix(Problem):
             if 1 not in placed_values and not state.exists_valid_path_between(1, placed_values[0]):
                 return math.inf
 
-            if state.board.N ** 2 not in placed_values:
-                if not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
+            if state.board.N ** 2 not in placed_values and not state.exists_valid_path_between(placed_values[-1], state.board.N ** 2):
                     return math.inf
             
             # best option
@@ -525,7 +530,7 @@ class Numbrix(Problem):
 
                 if action[2] == state.board.N ** 2 and action[2] - 1 in adjacents:
                     return -math.inf
-
+                
             if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
                 r_s, c_s = state.board.find_number(action[2] + 1)
                 free_s = state.board.get_free_adjacent_positions(r_s, c_s)
@@ -534,10 +539,8 @@ class Numbrix(Problem):
                 free = set(free_s).intersection(free_a)
 
                 if len(free) > 0:
-                    return self.initial.board.N ** 2 - len(state.board.get_placed_values())
-
+                    return self.initial.board.N ** 2 - len(placed_values)
                 return -math.inf
-
         return self.initial.board.N ** 2 - len(state.board.get_placed_values())
 
 
