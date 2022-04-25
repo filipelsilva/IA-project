@@ -226,7 +226,48 @@ class Board:
 
         return ret
     
+    def iterative_path_counter(self, val1, val2) -> bool:
+        """ Verifica se existe caminho válido entre dois valores da Board. """
+        row, col = self.find_number(val1)
+        # print(val1, val2)
+        # print(row, col)
+
+        explored = set()
+        to_explore = set()
+        to_explore.add((row, col))
+
+        while len(to_explore) != 0:
+            # print(to_explore)
+            row, col = to_explore.pop()
+
+            if row != None:
+                explored.add((row, col))
+                adjacents = self.get_all_adjacents(row, col)
+
+                if val2 in adjacents:
+                    return True
+
+                # Abaixo
+                if (row + 1, col) not in explored and adjacents[0] == 0:
+                    to_explore.add((row + 1, col))
+
+                # Acima
+                if (row - 1, col) not in explored and adjacents[1] == 0:
+                    to_explore.add((row - 1, col))
+
+                # Esquerda
+                if (row, col - 1) not in explored and adjacents[2] == 0:
+                    to_explore.add((row, col - 1))
+
+                # Direita
+                if (row, col + 1) not in explored and adjacents[3] == 0:
+                    to_explore.add((row, col + 1))
+
+        return False
+
     def get_valid_path_between(self, val1, val2) -> list:
+        return self.iterative_path_counter(val1, val2)
+
         obj_len = val2 - val1 - 1
         row, col = self.find_number(val1)
         if obj_len == 0:
