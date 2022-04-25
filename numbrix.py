@@ -411,22 +411,6 @@ class Numbrix(Problem):
                 else:
                     return []
 
-            for position in free_positions:
-                r, c = position
-                adjacents = state.board.get_all_adjacents(r, c)
-
-                for v in adjacents:
-                    if v is not None and v != 0 and v != value:
-                        if abs(v - value) == 2:
-                            if max(v, value) - 1 in possible_values:
-                                if adjacents.count(0) == 0:
-                                    return [(r, c, max(v, value) - 1)]
-
-                                ret += [(r, c, max(v, value) - 1)]
-
-            if len(ret) > 0:
-                return ret
-
         for place in board:
             row, col = place
             value = state.board.get_number(row, col)
