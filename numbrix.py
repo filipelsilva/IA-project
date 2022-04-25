@@ -9,7 +9,7 @@
 import sys
 
 from search import Problem, Node, astar_search, breadth_first_tree_search, depth_first_tree_search, greedy_search, \
-    recursive_best_first_search
+    recursive_best_first_search, compare_searchers
 from utils import unique
 import math
 import bisect
@@ -448,5 +448,7 @@ if __name__ == "__main__":
     board = Board.parse_instance(sys.argv[1])
 
     problem = Numbrix(board)
-    goal_node = recursive_best_first_search(problem)
-    print(goal_node.state.board.to_string(), end="")
+    # Actions (total), Goal tests, Generated Nodes
+    compare_searchers([problem], "")
+    # goal_node = recursive_best_first_search(problem)
+    # print(goal_node.state.board.to_string(), end="")
