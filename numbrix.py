@@ -411,11 +411,7 @@ if __name__ == "__main__":
 
     problem = Numbrix(board)
     # Actions (total), Goal tests, Generated Nodes
-    # compare_searchers([problem], "", [depth_first_tree_search,
-        # breadth_first_tree_search,
-        # astar_search,
-        # greedy_search,
-        # recursive_best_first_search
-        # ])
-    goal_node = recursive_best_first_search(problem)
-    print(goal_node.state.board.to_string(), end="")
+    comparers = [breadth_first_tree_search, depth_first_tree_search, astar_search, greedy_search, recursive_best_first_search]
+    compare_searchers([problem], "", [comparers[0]])
+    # goal_node = recursive_best_first_search(problem)
+    # print(goal_node.state.board.to_string(), end="")
