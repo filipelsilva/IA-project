@@ -373,12 +373,14 @@ class Numbrix(Problem):
         if action is not None:
             adjacents = state.board.get_all_adjacents(action[0], action[1])
 
-            possible_values = state.board.get_possible_values()
-
             count = adjacents.count(0)
 
             # best option
             if count == 0:
+                # wrong
+                if not state.val_in_place(action[2], adjacents):
+                    return math.inf
+                
                 if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
                     return -math.inf
 
@@ -387,23 +389,6 @@ class Numbrix(Problem):
 
                 if action[2] == state.board.N ** 2 and action[2] - 1 in adjacents:
                     return -math.inf
-            if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
-                return 0
-
-            if count == 0 and (action[2] + 1 in possible_values or action[2] - 1 in possible_values):
-                return math.inf
-
-            for val in adjacents:
-                if val is not None and val != 0:
-                    row, col = state.board.find_number(val)
-                    val_adjacents = state.board.get_all_adjacents(row, col)
-                    val_adjacents_count = val_adjacents.count(0)
-
-                    if val_adjacents_count == 0 and (val + 1 in possible_values or val - 1 in possible_values):
-                        return math.inf
-
-                    if val_adjacents_count == 1 and val + 1 in possible_values and val - 1 in possible_values:
-                        return math.inf
 
             if [] in state.board.paths.values():
                 return math.inf
