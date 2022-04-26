@@ -227,31 +227,6 @@ class Board:
 
         return ret
 
-    def recursive_free_area_counter(self, explored, row, col):
-        adjacents = self.get_all_adjacents(row, col)
-
-        #abaixo
-        if adjacents[0] == 0 and (row + 1, col) not in explored:
-            explored += [(row + 1, col)]
-            self.recursive_free_area_counter(explored, row + 1, col)
-
-        #acima
-        if adjacents[1] == 0 and (row - 1, col) not in explored:
-            explored += [(row - 1, col)]
-            self.recursive_free_area_counter(explored, row - 1, col)
-
-        #esquerda
-        if adjacents[2] == 0 and (row, col - 1) not in explored:
-            explored += [(row, col - 1)]
-            self.recursive_free_area_counter(explored, row, col - 1)
-
-        #direita
-        if adjacents[3] == 0 and (row, col + 1) not in explored:
-            explored += [(row, col + 1)]
-            self.recursive_free_area_counter(explored, row, col + 1)
-
-        return explored
-
     def get_copy(self):
         """ Devolve uma cópia da Board. """
         copy_board = dict()
@@ -367,7 +342,7 @@ class Numbrix(Problem):
                 if len(free) == 1:
                     return [(free[0][0], free[0][1], next_val - 1)]
 
-        return unique(ret)
+        return ret
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
         """ Retorna o estado resultante de executar a 'action' sobre 'state' passado como argumento. A ação a
@@ -398,12 +373,14 @@ class Numbrix(Problem):
         if action is not None:
             adjacents = state.board.get_all_adjacents(action[0], action[1])
 
-            possible_values = state.board.get_possible_values()
-
             count = adjacents.count(0)
 
             # best option
             if count == 0:
+                # wrong
+                if not state.val_in_place(action[2], adjacents):
+                    return math.inf
+                
                 if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
                     return -math.inf
 
@@ -412,23 +389,6 @@ class Numbrix(Problem):
 
                 if action[2] == state.board.N ** 2 and action[2] - 1 in adjacents:
                     return -math.inf
-            if action[2] != 1 and action[2] + 1 in adjacents and action[2] - 1 in adjacents:
-                return 0
-
-            if count == 0 and (action[2] + 1 in possible_values or action[2] - 1 in possible_values):
-                return math.inf
-
-            for val in adjacents:
-                if val is not None and val != 0:
-                    row, col = state.board.find_number(val)
-                    val_adjacents = state.board.get_all_adjacents(row, col)
-                    val_adjacents_count = val_adjacents.count(0)
-
-                    if val_adjacents_count == 0 and (val + 1 in possible_values or val - 1 in possible_values):
-                        return math.inf
-
-                    if val_adjacents_count == 1 and val + 1 in possible_values and val - 1 in possible_values:
-                        return math.inf
 
             if [] in state.board.paths.values():
                 return math.inf
