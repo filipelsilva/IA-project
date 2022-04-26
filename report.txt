@@ -74,3 +74,43 @@ A*,401,402,544
 RBFS,129,130,178
 Greedy,130,131,179
 DFS,874507,874508,874524
+
+tests/input1.txt
+
+time    0m0.146s
+
+tests/input2.txt
+
+time    0m0.627s
+
+tests/input3.txt
+
+time    0m0.152s
+
+tests/input4.txt
+
+time    0m0.157s
+
+tests/input5.txt
+
+time    0m0.264s
+
+tests/input6.txt
+
+time    0m0.216s
+
+tests/input7.txt
+
+time    0m0.244s
+
+tests/input8.txt
+
+time    0m0.227s
+
+tests/input9.txt
+
+time    0m0.175s
+
+tests/input10.txt
+
+time    0m0.142s
