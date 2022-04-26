@@ -116,21 +116,21 @@ class Board:
         # Abaixo
         if adjacents[0] == 0 and (row + 1, col) not in path:
             ret = self.get_recursive_path(path + [(row + 1, col)], length + 1, obj_len, obj)
-        
+
         if len(ret) > 0:
             return ret
 
         # Acima
         if adjacents[1] == 0 and (row - 1, col) not in path:
             ret = self.get_recursive_path(path + [(row - 1, col)], length + 1, obj_len, obj)
-        
+
         if len(ret) > 0:
             return ret
 
         # Esquerda
         if adjacents[2] == 0 and (row, col - 1) not in path:
             ret = self.get_recursive_path(path + [(row, col - 1)], length + 1, obj_len, obj)
-        
+
         if len(ret) > 0:
             return ret
 
@@ -232,7 +232,7 @@ class Board:
         copy_board = dict()
         for place in self.board:
             copy_board[place] = self.board[place]
-        
+
         copy_placed = []
         for placed in self.placed_values:
             copy_placed += [placed]
@@ -255,13 +255,13 @@ class Board:
                 for col in range(N):
                     if board_tmp[row][col] != 0:
                         board[(row, col)] = board_tmp[row][col]
-        
+
         placed_values = []
         for place in board:
             bisect.insort(placed_values, board[place])
-        
+
         tmp_board = Board(N, board, placed_values, {})
-        
+
         paths = dict()
         length = len(placed_values)
         for i in range(length - 1):
@@ -329,7 +329,7 @@ class Numbrix(Problem):
                         ret += [(position[0], position[1], value - 1)]
 
         length = len(placed_values)
-        
+
         for i in range(length - 1):
             val = placed_values[i]
             next_val = placed_values[i + 1]
@@ -407,10 +407,10 @@ class Numbrix(Problem):
 
             if [] in state.board.paths.values():
                 return math.inf
-            
+
             if state.has_unreachable_places():
                 return math.inf
-                
+
         return self.initial.board.N ** 2 - len(state.board.get_placed_values())
 
 
