@@ -341,6 +341,8 @@ class Numbrix(Problem):
                 free = list(set(free_val_adj).intersection(free_next_val_adj))
                 if len(free) == 1:
                     return [(free[0][0], free[0][1], next_val - 1)]
+                if len(free) == 0:
+                    return []
 
         return ret
 
