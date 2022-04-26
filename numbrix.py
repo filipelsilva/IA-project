@@ -226,31 +226,6 @@ class Board:
             ret += [(row, col - 1)]
 
         return ret
-    
-    def recursive_free_area_counter(self, explored, row, col):
-        adjacents = self.get_all_adjacents(row, col)
-
-        #abaixo
-        if adjacents[0] == 0 and (row + 1, col) not in explored:
-            explored += [(row + 1, col)]
-            self.recursive_free_area_counter(explored, row + 1, col)
-            
-        #acima
-        if adjacents[1] == 0 and (row - 1, col) not in explored:
-            explored += [(row - 1, col)]
-            self.recursive_free_area_counter(explored, row - 1, col)
-        
-        #esquerda
-        if adjacents[2] == 0 and (row, col - 1) not in explored:
-            explored += [(row, col - 1)]
-            self.recursive_free_area_counter(explored, row, col - 1)
-        
-        #direita
-        if adjacents[3] == 0 and (row, col + 1) not in explored:
-            explored += [(row, col + 1)]
-            self.recursive_free_area_counter(explored, row, col + 1)
-
-        return explored
 
     def get_copy(self):
         """ Devolve uma cópia da Board. """
@@ -367,7 +342,7 @@ class Numbrix(Problem):
                 if len(free) == 1:
                     return [(free[0][0], free[0][1], next_val - 1)]
 
-        return unique(ret)
+        return ret
 
     def result(self, state: NumbrixState, action) -> NumbrixState:
         """ Retorna o estado resultante de executar a 'action' sobre 'state' passado como argumento. A ação a

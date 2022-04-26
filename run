@@ -46,25 +46,25 @@ one() {
 }
 
 timer() {
-	for i in {0..13}; do
+	for i in {0..15}; do
 		one "$i" "${FUNCNAME[0]}"
 	done
 }
 
 output() {
-	for i in {0..13}; do
+	for i in {0..15}; do
 		one "$i" "${FUNCNAME[0]}"
 	done
 }
 
 profile() {
-	for i in {0..13}; do
+	for i in {0..15}; do
 		one "$i" "${FUNCNAME[0]}"
 	done
 }
 
 full() {
-	for i in {0..13}; do
+	for i in {0..15}; do
 		one "$i" "${FUNCNAME[0]}"
 	done
 }
